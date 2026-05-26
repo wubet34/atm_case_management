@@ -1,8 +1,31 @@
 const db = require('../config/database');
 
+// Track recently sent notifications to prevent duplicates
+const recentNotifications = new Map(); // notificationId -> timestamp
+
 // Helper to emit real-time notification
 const emitNotification = (io, userId, notification) => {
   console.log(`📤 Emitting notification to user ${userId}:`, notification);
+  
+  // Check if this notification was sent recently (within last 2 seconds)
+  const key = `${userId}_${notification.id}`;
+  if (recentNotifications.has(key)) {
+    const lastSent = recentNotifications.get(key);
+    if (Date.now() - lastSent < 2000) {
+      console.log(`⚠️ Skipping duplicate notification emit for ${key}`);
+      return;
+    }
+  }
+  
+  recentNotifications.set(key, Date.now());
+  
+  // Clean up old entries (older than 5 seconds)
+  for (const [k, timestamp] of recentNotifications.entries()) {
+    if (Date.now() - timestamp > 5000) {
+      recentNotifications.delete(k);
+    }
+  }
+  
   io.to(`user_${userId}`).emit('new-notification', notification);
 };
 
@@ -23,7 +46,7 @@ const createNotification = async (userId, type, title, message, caseId = null) =
 const getNotifications = async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50`,
+      `SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100`,
       [req.user.id]
     );
     res.json({ success: true, data: result.rows });
