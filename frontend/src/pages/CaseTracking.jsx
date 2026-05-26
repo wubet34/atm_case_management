@@ -47,7 +47,19 @@ const CaseTracking = () => {
     return obj[camelCase] || obj[snakeCase] || '';
   };
 
-  // Format date safely
+  // Format date with time (NEW FUNCTION)
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      return date.toLocaleString(); // This shows date AND time
+    } catch {
+      return '-';
+    }
+  };
+
+  // Format date only (for compatibility)
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     try {
@@ -280,15 +292,15 @@ const CaseTracking = () => {
           )}
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1"><Calendar size={14} /> Start Date:</span>
+          <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1"><Calendar size={14} /> Start Date/Time:</span>
           <span className="text-gray-900 dark:text-white text-xs">
-            {formatDate(caseItem.startDate || caseItem.start_date)}
+            {formatDateTime(caseItem.startDate || caseItem.start_date)}
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1"><Clock size={14} /> End Date:</span>
+          <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1"><Clock size={14} /> End Date/Time:</span>
           <span className="text-gray-900 dark:text-white text-xs">
-            {formatDate(caseItem.endDate || caseItem.end_date)}
+            {formatDateTime(caseItem.endDate || caseItem.end_date)}
           </span>
         </div>
         {caseItem.comment && (
@@ -426,7 +438,7 @@ const CaseTracking = () => {
         )}
       </div>
 
-      {/* Desktop Table View */}
+      {/* Desktop Table View - UPDATED columns */}
       <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-325">
@@ -441,8 +453,8 @@ const CaseTracking = () => {
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Case Type</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Technician</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Start Date</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">End Date</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Start Date/Time</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">End Date/Time</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -476,10 +488,10 @@ const CaseTracking = () => {
                       </span>
                     </td>
                     <td className="px-3 py-3 text-sm text-gray-600 dark:text-gray-400">
-                      {formatDate(caseItem.startDate || caseItem.start_date)}
+                      {formatDateTime(caseItem.startDate || caseItem.start_date)}
                     </td>
                     <td className="px-3 py-3 text-sm text-gray-600 dark:text-gray-400">
-                      {formatDate(caseItem.endDate || caseItem.end_date)}
+                      {formatDateTime(caseItem.endDate || caseItem.end_date)}
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex gap-2">
@@ -531,6 +543,7 @@ const CaseTracking = () => {
         )}
       </div>
 
+      {/* Rest of the modals remain the same */}
       {/* Complete Confirmation Modal */}
       {showCompleteConfirm && pendingCompleteCase && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -598,7 +611,7 @@ const CaseTracking = () => {
         </div>
       )}
 
-      {/* View Case Modal */}
+      {/* View Case Modal - UPDATED to show DateTime */}
       {showViewModal && selectedCase && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
@@ -642,12 +655,12 @@ const CaseTracking = () => {
                   <p className="text-sm text-orange-600 dark:text-orange-400 font-semibold">{selectedCase.technician || 'Not assigned'}</p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Start Date</p>
-                  <p className="text-sm text-gray-900 dark:text-white">{formatDate(selectedCase.startDate || selectedCase.start_date)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Start Date/Time</p>
+                  <p className="text-sm text-gray-900 dark:text-white">{formatDateTime(selectedCase.startDate || selectedCase.start_date)}</p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">End Date</p>
-                  <p className="text-sm text-gray-900 dark:text-white">{formatDate(selectedCase.endDate || selectedCase.end_date)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">End Date/Time</p>
+                  <p className="text-sm text-gray-900 dark:text-white">{formatDateTime(selectedCase.endDate || selectedCase.end_date)}</p>
                 </div>
                 <div className="md:col-span-2 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
                   <p className="text-xs text-gray-500 dark:text-gray-400">Comment</p>
