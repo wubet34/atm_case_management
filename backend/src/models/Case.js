@@ -139,13 +139,13 @@ const Case = {
   },
 
   // Complete work
-  async completeWork(caseId) {
+ async completeWork(caseId) {
     const result = await db.query(
       `UPDATE cases 
        SET status = 'Completed', 
-           end_date = NOW(),
-           completed_at = NOW(),
-           updated_at = NOW()
+           end_date = CURRENT_TIMESTAMP,
+           completed_at = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP
        WHERE id = $1
        RETURNING *`,
       [caseId]

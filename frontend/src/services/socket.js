@@ -1,7 +1,5 @@
 import { io } from 'socket.io-client';
-
-// HARDCODED PRODUCTION URL
-const SOCKET_URL = 'https://atm-case-management.onrender.com';
+import { SOCKET_URL } from '../config';
 
 class SocketService {
   constructor() {
@@ -14,33 +12,44 @@ class SocketService {
       console.log('Connecting to socket server at:', SOCKET_URL);
       
       this.socket = io(SOCKET_URL, {
-        transports: ['websocket'],
+        transports: ['websocket', 'polling'], // Add polling as fallback
         auth: { token },
         reconnection: true,
-        reconnectionAttempts: 5,
+        reconnectionAttempts: 10,
         reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
       });
 
       this.socket.on('connect', () => {
-        console.log('✅ Socket connected successfully');
+        console.log('✅ Socket connected successfully, ID:', this.socket.id);
         this.isConnected = true;
-        this.socket.emit('register-user', userId);
-        console.log(`📡 Registered user ${userId} to room`);
+        if (userId) {
+          this.socket.emit('register-user', userId);
+          console.log(`📡 Registered user ${userId} to room`);
+        }
       });
 
-      this.socket.on('disconnect', () => {
-        console.log('❌ Socket disconnected');
+      this.socket.on('disconnect', (reason) => {
+        console.log('❌ Socket disconnected:', reason);
         this.isConnected = false;
       });
 
       this.socket.on('connect_error', (error) => {
-        console.error('Socket connection error:', error);
+        console.error('Socket connection error:', error.message);
         this.isConnected = false;
       });
 
       this.socket.on('reconnect', (attemptNumber) => {
         console.log(`🔄 Socket reconnected after ${attemptNumber} attempts`);
-        this.socket.emit('register-user', userId);
+        if (userId) {
+          this.socket.emit('register-user', userId);
+        }
+      });
+
+      // Debug: Log all incoming events
+      this.socket.onAny((event, ...args) => {
+        console.log('📨 Socket event received:', event, args);
       });
     }
     return this.socket;
@@ -57,7 +66,7 @@ class SocketService {
   onNewNotification(callback) {
     if (this.socket) {
       this.socket.on('new-notification', (data) => {
-        console.log('📨 Received new notification:', data);
+        console.log('🔔 New notification received:', data);
         callback(data);
       });
     }
@@ -81,6 +90,9 @@ class SocketService {
   emit(event, data) {
     if (this.socket && this.isConnected) {
       this.socket.emit(event, data);
+      console.log(`📤 Emitted ${event}:`, data);
+    } else {
+      console.warn(`Cannot emit ${event}, socket not connected`);
     }
   }
 }

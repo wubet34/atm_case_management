@@ -139,52 +139,34 @@ export const NotificationProvider = ({ children }) => {
   }, [loadNotifications]);
 
   // Set up socket listeners for real-time updates
-  useEffect(() => {
-    console.log('Setting up socket listeners...');
+  // Update the socket listener section
+useEffect(() => {
+  console.log('Setting up socket listeners...');
+  
+  // Listen for new notifications
+  const handleNewNotification = (notification) => {
+    console.log('🔥 New notification received via socket:', notification);
     
-    // Listen for new notifications
-    const handleNewNotification = (notification) => {
-      console.log('🔥 New notification received via socket:', notification);
-      
-      // Check if notification already exists
-      if (notificationIdsRef.current.has(notification.id)) {
-        console.log('⚠️ Duplicate notification ignored:', notification.id);
-        return;
-      }
-      
-      // Add to set and state
-      notificationIdsRef.current.add(notification.id);
-      
-      setNotifications(prev => {
-        // Final check for duplicates in current state
-        if (prev.some(n => n.id === notification.id)) {
-          return prev;
-        }
-        return [notification, ...prev];
-      });
-      
-      // Update unread count
-      setUnreadCount(prev => prev + 1);
-      
-      // Show toast
-      showToastNotification(notification);
-    };
+    // Immediately reload notifications
+    loadNotifications();
     
-    const handleUnreadCountUpdate = (data) => {
-      console.log('📊 Unread count update via socket:', data);
-      if (data && typeof data.unreadCount === 'number') {
-        setUnreadCount(data.unreadCount);
-      }
-    };
-    
-    socketService.onNewNotification(handleNewNotification);
-    socketService.onUnreadCountUpdate(handleUnreadCountUpdate);
+    // Show toast
+    showToastNotification(notification);
+  };
+  
+  const handleUnreadCountUpdate = (data) => {
+    console.log('📊 Unread count update via socket:', data);
+    setUnreadCount(data.unreadCount);
+  };
+  
+  socketService.onNewNotification(handleNewNotification);
+  socketService.onUnreadCountUpdate(handleUnreadCountUpdate);
 
-    return () => {
-      socketService.off('new-notification', handleNewNotification);
-      socketService.off('unread-count-update', handleUnreadCountUpdate);
-    };
-  }, []);
+  return () => {
+    socketService.off('new-notification', handleNewNotification);
+    socketService.off('unread-count-update', handleUnreadCountUpdate);
+  };
+}, [loadNotifications]);
 
   // Polling as fallback (every 30 seconds)
   useEffect(() => {
