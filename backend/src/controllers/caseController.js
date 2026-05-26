@@ -188,14 +188,44 @@ const appointTechnician = async (req, res) => {
 // @access  Private/Technician
 const startWork = async (req, res) => {
   try {
-    const caseItem = await Case.findById(req.params.id);
+    const caseId = req.params.id;
+    const caseItem = await Case.findById(caseId);
+    
     if (!caseItem) {
       return res.status(404).json({ success: false, message: 'Case not found' });
     }
+    
     if (caseItem.technician_id !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
-    const updatedCase = await Case.startWork(req.params.id);
+    
+    const updatedCase = await Case.startWork(caseId);
+    
+    // Create notification for technician that work started
+    const io = getIo(req);
+    const notification = await createNotification(
+      req.user.id,
+      'case_started',
+      'Work Started',
+      `You have started working on case ${updatedCase.case_id}`,
+      updatedCase.id
+    );
+    emitNotification(io, req.user.id, notification);
+    
+    // Notify admins
+    const admins = await db.query(`SELECT id FROM users WHERE role = 'admin'`);
+    for (const admin of admins.rows) {
+      const adminNotification = await createNotification(
+        admin.id,
+        'case_started',
+        'Work Started on Case',
+        `${req.user.name} has started working on case ${updatedCase.case_id}`,
+        updatedCase.id
+      );
+      emitNotification(io, admin.id, adminNotification);
+    }
+    
+    console.log('Work started successfully for case:', updatedCase.case_id);
     res.json({ success: true, data: updatedCase });
   } catch (error) {
     console.error('Error starting work:', error);
@@ -208,27 +238,58 @@ const startWork = async (req, res) => {
 // @access  Private/Technician
 const completeWork = async (req, res) => {
   try {
-    const caseItem = await Case.findById(req.params.id);
+    const caseId = req.params.id;
+    const caseItem = await Case.findById(caseId);
+    
     if (!caseItem) {
       return res.status(404).json({ success: false, message: 'Case not found' });
     }
+    
     if (caseItem.technician_id !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
-    const updatedCase = await Case.completeWork(req.params.id);
     
-    // Notify the admin who created the case
+    const updatedCase = await Case.completeWork(caseId);
+    
+    // Create notification for technician that work completed
+    const io = getIo(req);
     const notification = await createNotification(
-      caseItem.created_by,
+      req.user.id,
       'case_completed',
       'Case Completed',
-      `Case ${updatedCase.case_id} has been completed by ${req.user.name}`,
+      `Congratulations! You have completed case ${updatedCase.case_id}`,
       updatedCase.id
     );
+    emitNotification(io, req.user.id, notification);
     
-    const io = getIo(req);
-    emitNotification(io, caseItem.created_by, notification);
+    // Notify the admin who created the case
+    if (caseItem.created_by) {
+      const adminNotification = await createNotification(
+        caseItem.created_by,
+        'case_completed',
+        'Case Completed',
+        `Case ${updatedCase.case_id} has been completed by ${req.user.name}`,
+        updatedCase.id
+      );
+      emitNotification(io, caseItem.created_by, adminNotification);
+    }
     
+    // Notify all other admins
+    const admins = await db.query(`SELECT id FROM users WHERE role = 'admin'`);
+    for (const admin of admins.rows) {
+      if (admin.id !== caseItem.created_by) {
+        const otherAdminNotification = await createNotification(
+          admin.id,
+          'case_completed',
+          'Case Completed',
+          `Case ${updatedCase.case_id} has been completed by ${req.user.name}`,
+          updatedCase.id
+        );
+        emitNotification(io, admin.id, otherAdminNotification);
+      }
+    }
+    
+    console.log('Work completed successfully for case:', updatedCase.case_id);
     res.json({ success: true, data: updatedCase });
   } catch (error) {
     console.error('Error completing work:', error);
@@ -242,11 +303,42 @@ const completeWork = async (req, res) => {
 const terminateCase = async (req, res) => {
   try {
     const { reason } = req.body;
-    const caseItem = await Case.findById(req.params.id);
+    const caseId = req.params.id;
+    const caseItem = await Case.findById(caseId);
+    
     if (!caseItem) {
       return res.status(404).json({ success: false, message: 'Case not found' });
     }
-    const updatedCase = await Case.terminateCase(req.params.id, reason);
+    
+    const updatedCase = await Case.terminateCase(caseId, reason);
+    
+    // Notify the technician if assigned
+    const io = getIo(req);
+    if (caseItem.technician_id) {
+      const notification = await createNotification(
+        caseItem.technician_id,
+        'case_terminated',
+        'Case Terminated',
+        `Case ${updatedCase.case_id} has been terminated. Reason: ${reason}`,
+        updatedCase.id
+      );
+      emitNotification(io, caseItem.technician_id, notification);
+    }
+    
+    // Notify all admins
+    const admins = await db.query(`SELECT id FROM users WHERE role = 'admin'`);
+    for (const admin of admins.rows) {
+      const adminNotification = await createNotification(
+        admin.id,
+        'case_terminated',
+        'Case Terminated',
+        `Case ${updatedCase.case_id} has been terminated by ${req.user.name}. Reason: ${reason}`,
+        updatedCase.id
+      );
+      emitNotification(io, admin.id, adminNotification);
+    }
+    
+    console.log('Case terminated successfully:', updatedCase.case_id);
     res.json({ success: true, data: updatedCase });
   } catch (error) {
     console.error('Error terminating case:', error);

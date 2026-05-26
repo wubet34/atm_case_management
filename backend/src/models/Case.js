@@ -14,8 +14,8 @@ const Case = {
     const { atmName, bank, district, branch, caseType, comment, priority, createdBy } = caseData;
     
     const result = await db.query(
-      `INSERT INTO cases (case_id, atm_name, bank, district, branch, case_type, comment, priority, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO cases (case_id, atm_name, bank, district, branch, case_type, comment, priority, created_by, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
        RETURNING *`,
       [caseId, atmName, bank, district, branch, caseType, comment, priority, createdBy]
     );
@@ -42,7 +42,7 @@ const Case = {
     return result.rows;
   },
 
-  // Get case by id - FIXED (removed User logic)
+  // Get case by id
   async findById(id) {
     const result = await db.query(
       `SELECT c.*, u.name as creator_name 
@@ -98,7 +98,7 @@ const Case = {
       values.push(caseData.priority);
     }
     
-    fields.push(`updated_at = CURRENT_TIMESTAMP`);
+    fields.push(`updated_at = NOW()`);
     
     if (fields.length === 0) return null;
     
@@ -111,23 +111,16 @@ const Case = {
 
   // Appoint technician
   async appointTechnician(caseId, technicianId, technicianName) {
-    console.log('Appointing in model:', { caseId, technicianId, technicianName });
-    
     const result = await db.query(
       `UPDATE cases 
        SET status = 'Appointed', 
            technician_id = $1, 
            technician = $2,
-           updated_at = CURRENT_TIMESTAMP
+           updated_at = NOW()
        WHERE id = $3
        RETURNING *`,
       [technicianId, technicianName, caseId]
     );
-    
-    if (result.rows.length === 0) {
-      throw new Error('Case not found or update failed');
-    }
-    
     return result.rows[0];
   },
 
@@ -136,8 +129,8 @@ const Case = {
     const result = await db.query(
       `UPDATE cases 
        SET status = 'Ongoing', 
-           start_date = CURRENT_TIMESTAMP,
-           updated_at = CURRENT_TIMESTAMP
+           start_date = NOW(),
+           updated_at = NOW()
        WHERE id = $1
        RETURNING *`,
       [caseId]
@@ -150,9 +143,9 @@ const Case = {
     const result = await db.query(
       `UPDATE cases 
        SET status = 'Completed', 
-           end_date = CURRENT_TIMESTAMP,
-           completed_at = CURRENT_TIMESTAMP,
-           updated_at = CURRENT_TIMESTAMP
+           end_date = NOW(),
+           completed_at = NOW(),
+           updated_at = NOW()
        WHERE id = $1
        RETURNING *`,
       [caseId]
@@ -166,8 +159,8 @@ const Case = {
       `UPDATE cases 
        SET status = 'Terminated', 
            termination_reason = $1,
-           terminated_at = CURRENT_TIMESTAMP,
-           updated_at = CURRENT_TIMESTAMP
+           terminated_at = NOW(),
+           updated_at = NOW()
        WHERE id = $2
        RETURNING *`,
       [reason, caseId]
