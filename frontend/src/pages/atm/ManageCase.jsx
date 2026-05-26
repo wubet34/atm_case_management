@@ -24,8 +24,12 @@ const ManageCase = () => {
     priority: 'Medium'
   });
 
-  const banks = ['Commercial Bank', 'Abyssinia Bank', 'Dashen Bank', 'Awash Bank', 'Hibret Bank', 'Zemen Bank', 'Oromia Bank'];
-  const districts = ['Bole', 'Kirkos', 'Yeka', 'Gulele', 'Kolfe', 'Addis Ketema', 'Nifas Silk', 'Lideta', 'Arada'];
+  // Updated bank list
+  const banks = ['Awash Bank', 'Dashen Bank', 'Ahadu Bank', 'Amhara Bank', 'Zemen Bank'];
+
+  // Updated district list
+  const districts = ['South', 'East', 'West', 'North', 'Hawasa', 'Adama', 'Wolayita', 'Dessie'];
+
   const branches = ['Main Branch', 'Bole Branch', 'Mexico Branch', 'Cmc Branch', 'Piassa Branch', 'Sar Bet Branch', 'Gerji Branch', 'Ayat Branch'];
   const caseTypes = ['Card Jam', 'Out of Cash', 'Technical Error', 'Card Not Returned', 'Network Issue', 'Hardware Failure', 'Power Issue', 'Display Error', 'Printer Issue', 'Cash Dispenser Error'];
   const priorities = ['Low', 'Medium', 'High', 'Urgent'];
@@ -158,11 +162,6 @@ const ManageCase = () => {
       bank?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
-
-  // Debug logs
-  console.log('All cases:', cases);
-  console.log('Filtered cases:', filteredCases);
-  console.log('Cases length:', cases.length);
 
   // Loading state
   if (contextLoading) {
@@ -387,7 +386,7 @@ const ManageCase = () => {
             
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* Form fields - same as before */}
+                {/* ATM Name */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     ATM Name <span className="text-red-500">*</span>
@@ -405,6 +404,7 @@ const ManageCase = () => {
                   </div>
                 </div>
                 
+                {/* Bank - UPDATED */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Bank <span className="text-red-500">*</span>
@@ -422,6 +422,7 @@ const ManageCase = () => {
                   </div>
                 </div>
                 
+                {/* District - UPDATED */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     District <span className="text-red-500">*</span>
@@ -439,6 +440,7 @@ const ManageCase = () => {
                   </div>
                 </div>
                 
+                {/* Branch */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Branch <span className="text-red-500">*</span>
@@ -456,6 +458,7 @@ const ManageCase = () => {
                   </div>
                 </div>
                 
+                {/* Case Type */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Case Type <span className="text-red-500">*</span>
@@ -473,6 +476,7 @@ const ManageCase = () => {
                   </div>
                 </div>
                 
+                {/* Priority */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Priority
@@ -486,6 +490,7 @@ const ManageCase = () => {
                   </select>
                 </div>
                 
+                {/* Comment */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Comment / Description
