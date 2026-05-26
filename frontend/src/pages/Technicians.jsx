@@ -265,7 +265,7 @@ const Technicians = () => {
               resetForm();
               setShowModal(true);
             }}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg"
+            className="bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg"
           >
             <UserPlus size={18} />
             Add Technician
@@ -345,7 +345,7 @@ const Technicians = () => {
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg flex items-center gap-2 hover:opacity-90 transition-colors"
+            className="px-4 py-2 bg-linear-to-r from-orange-500 to-orange-600 text-white rounded-lg flex items-center gap-2 hover:opacity-90 transition-colors"
           >
             <Filter size={18} />
             Advanced Filters
@@ -438,7 +438,7 @@ const Technicians = () => {
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-lg">
+                    <div className="w-12 h-12 rounded-full bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-lg">
                       {technician.name?.charAt(0) || 'T'}
                     </div>
                     <div>
@@ -577,7 +577,7 @@ const Technicians = () => {
             
             <div className="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
               <button onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Cancel</button>
-              <button onClick={handleSubmit} disabled={loading} className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg disabled:opacity-50">
+              <button onClick={handleSubmit} disabled={loading} className="px-4 py-2 bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg disabled:opacity-50">
                 {loading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : (editingTechnician ? 'Update Technician' : 'Add Technician')}
               </button>
             </div>
@@ -636,7 +636,7 @@ const Technicians = () => {
             </div>
             
             <div className="flex justify-end p-6 border-t border-gray-200 dark:border-gray-700">
-              <button onClick={() => setShowCredentialsModal(false)} className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg">I've Saved</button>
+              <button onClick={() => setShowCredentialsModal(false)} className="px-4 py-2 bg-linear-to-r from-orange-500 to-orange-600 text-white rounded-lg">I've Saved</button>
             </div>
           </div>
         </div>
