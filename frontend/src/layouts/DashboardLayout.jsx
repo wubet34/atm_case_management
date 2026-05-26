@@ -50,21 +50,23 @@ function DashboardLayout() {
     };
   }, []);
 
+  // Desktop sidebar widths: expanded = w-72 (288px), collapsed = w-16 (64px)
+  const sidebarWidth = !isMobile && expanded ? 288 : (!isMobile && !expanded ? 64 : 0);
+
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark' : ''}`}>
-      {/* Sidebar - on mobile it's an overlay, on desktop it's fixed */}
       <Sidebar expanded={expanded} setExpanded={setExpanded} />
       
-      {/* TopNavbar - adjust width on desktop only */}
-      <TopNavbar sidebarWidth={!isMobile && expanded ? 288 : 0} />
+      <TopNavbar sidebarWidth={sidebarWidth} />
       
-      {/* Main content - add margin on desktop only */}
+      {/* Main content - margin matches sidebar width exactly */}
       <main 
-        className={`transition-all duration-300 ease-in-out bg-gray-50 dark:bg-gray-950 min-h-screen
-          ${!isMobile && expanded ? "ml-72" : ""}
-          ${!isMobile && !expanded ? "ml-20" : ""}
-        `}
-        style={{ marginTop: '64px' }}
+        className={`bg-gray-50 dark:bg-gray-950 min-h-screen`}
+        style={{ 
+          marginLeft: !isMobile ? (expanded ? '288px' : '64px') : '0px',
+          marginTop: '64px',
+          transition: 'margin-left 0.3s ease-in-out'
+        }}
       >
         <div className="p-4 md:p-6">
           <Outlet />
