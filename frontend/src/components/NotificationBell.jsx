@@ -4,8 +4,8 @@ import { useNotifications } from '../context/NotificationContext';
 import { useDarkMode } from '../context/DarkModeContext';
 import { useNavigate } from 'react-router-dom';
 
-// Create simple notification sound
-const playNotificationSound = () => {
+// Simple sound function
+const playTestSound = () => {
   try {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
@@ -106,7 +106,8 @@ const NotificationBell = () => {
   };
 
   return (
-    <div className="relative flex items-center gap-2" ref={dropdownRef}>
+    <div className="relative flex items-center gap-3" ref={dropdownRef}>
+      {/* Bell Button */}
       <button
         onClick={handleOpen}
         className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -122,13 +123,13 @@ const NotificationBell = () => {
 
       {/* Test Sound Button */}
       <button
-        onClick={playNotificationSound}
-        className="px-2 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
-        title="Test Notification Sound"
+        onClick={playTestSound}
+        className="px-3 py-1.5 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
       >
         🔔 Test Sound
       </button>
 
+      {/* Dropdown */}
       {isOpen && (
         <>
           {/* Backdrop for mobile */}
@@ -138,7 +139,7 @@ const NotificationBell = () => {
           />
           
           {/* Dropdown */}
-          <div className="fixed bottom-0 left-0 right-0 lg:absolute lg:bottom-auto lg:left-auto lg:right-0 lg:top-full lg:mt-2 
+          <div className="fixed bottom-0 left-0 right-0 lg:absolute lg:bottom-auto lg:right-0 lg:top-full lg:mt-2 
                          bg-white dark:bg-gray-800 rounded-t-xl lg:rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 
                          z-50 overflow-hidden
                          lg:w-96 w-full max-h-[80vh] lg:max-h-96
@@ -167,13 +168,7 @@ const NotificationBell = () => {
                 )}
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors lg:hidden"
-                >
-                  <X size={20} />
-                </button>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors hidden lg:block"
+                  className="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                 >
                   <X size={16} />
                 </button>
@@ -238,7 +233,7 @@ const NotificationBell = () => {
       )}
 
       {/* Add animation CSS */}
-      <style jsx>{`
+      <style>{`
         @keyframes slideUp {
           from {
             transform: translateY(100%);
