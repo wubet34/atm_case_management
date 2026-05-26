@@ -1,4 +1,3 @@
-// Create a simple notification sound using Web Audio API
 class NotificationSound {
   constructor() {
     this.audioContext = null;
