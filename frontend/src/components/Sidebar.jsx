@@ -14,6 +14,10 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
   const [internalExpanded, setInternalExpanded] = useState(() => {
     const saved = localStorage.getItem("sidebar");
     const isDesktop = window.innerWidth >= 1024;
+    // On mobile, always start collapsed (only show menu icon)
+    if (!isDesktop) {
+      return false;
+    }
     if (saved !== null) {
       return JSON.parse(saved);
     }
@@ -107,7 +111,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
       }
     >
       {Icon ? <Icon size={14} className="text-orange-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />}
-      <span>{label}</span>
+      {expanded && <span>{label}</span>}
     </NavLink>
   );
 
@@ -131,17 +135,17 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
   return (
     <div
       className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-900 shadow-lg flex flex-col transition-all duration-300 ease-in-out z-40
-      ${expanded ? "w-72" : "w-20"}
+      ${expanded ? "w-72" : "w-16"}
       dark:border-r dark:border-gray-800`}
     >
-      {/* HEADER SECTION */}
-      <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
+      {/* HEADER SECTION - Only menu icon on mobile */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
         {expanded && (
           <img src={logo} className="w-24 object-contain dark:brightness-0 dark:invert" alt="Logo" />
         )}
         <button
           onClick={() => setExpanded(!expanded)}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${!expanded ? "mx-auto" : ""}`}
         >
           {expanded ? <X size={18} className="dark:text-gray-300" /> : <Menu size={18} className="dark:text-gray-300" />}
         </button>
@@ -149,7 +153,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
 
       {/* MAIN NAVIGATION */}
       <div className="flex-1 overflow-y-auto">
-        <nav className="flex flex-col gap-1 p-3">
+        <nav className="flex flex-col gap-1 p-2">
           <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
           <NavItem to="/cases" icon={FileText} label="Case Tracking" />
 
@@ -214,13 +218,13 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
         </nav>
       </div>
 
-      {/* DARK MODE TOGGLE ONLY - No Profile Section */}
-      <div className="border-t border-gray-100 dark:border-gray-800 p-4">
+      {/* DARK MODE TOGGLE */}
+      <div className="border-t border-gray-100 dark:border-gray-800 p-3">
         <button
           onClick={toggleDarkMode}
-          className="w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center"
+          className={`w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center ${expanded ? "justify-start" : "justify-center"}`}
         >
-          <div className="flex items-center gap-3">
+          <div className={`flex items-center gap-3 ${!expanded && "justify-center"}`}>
             {darkMode ? <Sun size={18} className="text-yellow-500" /> : <Moon size={18} className="text-gray-600 dark:text-gray-400" />}
             {expanded && (
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
