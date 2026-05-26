@@ -1,11 +1,11 @@
-// Centralized configuration
+// Centralized configuration - HARDCODED FOR PRODUCTION
 const config = {
-  apiUrl: import.meta.env.VITE_API_URL || 'https://atm-case-management.onrender.com/api',
-  socketUrl: import.meta.env.VITE_SOCKET_URL || 'https://atm-case-management.onrender.com',
-  appName: import.meta.env.VITE_APP_NAME || 'ATM Case Management',
-  version: import.meta.env.VITE_APP_VERSION || '1.0.0',
-  isProduction: import.meta.env.PROD,
-  isDevelopment: import.meta.env.DEV,
+  apiUrl: 'https://atm-case-management.onrender.com/api',
+  socketUrl: 'https://atm-case-management.onrender.com',
+  appName: 'ATM Case Management',
+  version: '1.0.0',
+  isProduction: true,
+  isDevelopment: false,
 };
 
 export const API_URL = config.apiUrl;

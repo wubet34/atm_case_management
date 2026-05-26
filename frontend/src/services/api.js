@@ -1,4 +1,5 @@
-import { API_URL } from '../config';
+// HARDCODED PRODUCTION URL
+const API_URL = 'https://atm-case-management.onrender.com/api';
 
 const getToken = () => localStorage.getItem('token');
 

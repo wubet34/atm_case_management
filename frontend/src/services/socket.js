@@ -1,5 +1,7 @@
 import { io } from 'socket.io-client';
-import { SOCKET_URL } from '../config';
+
+// HARDCODED PRODUCTION URL
+const SOCKET_URL = 'https://atm-case-management.onrender.com';
 
 class SocketService {
   constructor() {
@@ -9,7 +11,7 @@ class SocketService {
 
   connect(token, userId) {
     if (!this.socket) {
-      console.log('Connecting to socket server...');
+      console.log('Connecting to socket server at:', SOCKET_URL);
       
       this.socket = io(SOCKET_URL, {
         transports: ['websocket'],
@@ -22,7 +24,6 @@ class SocketService {
       this.socket.on('connect', () => {
         console.log('✅ Socket connected successfully');
         this.isConnected = true;
-        // Register user to receive notifications
         this.socket.emit('register-user', userId);
         console.log(`📡 Registered user ${userId} to room`);
       });
