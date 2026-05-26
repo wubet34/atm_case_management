@@ -50,16 +50,20 @@ function DashboardLayout() {
     };
   }, []);
 
-  // On mobile, no margin at all (sidebar overlays)
-  // On desktop, add margin based on expanded state
-  const marginLeft = !isMobile && expanded ? "ml-72" : (!isMobile && !expanded ? "ml-20" : "ml-0");
-
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark' : ''}`}>
+      {/* Sidebar - on mobile it's an overlay, on desktop it's fixed */}
       <Sidebar expanded={expanded} setExpanded={setExpanded} />
-      <TopNavbar sidebarWidth={!isMobile && expanded ? 288 : (!isMobile && !expanded ? 80 : 0)} />
+      
+      {/* TopNavbar - adjust width on desktop only */}
+      <TopNavbar sidebarWidth={!isMobile && expanded ? 288 : 0} />
+      
+      {/* Main content - add margin on desktop only */}
       <main 
-        className={`transition-all duration-300 ease-in-out bg-gray-50 dark:bg-gray-950 min-h-screen ${marginLeft}`}
+        className={`transition-all duration-300 ease-in-out bg-gray-50 dark:bg-gray-950 min-h-screen
+          ${!isMobile && expanded ? "ml-72" : ""}
+          ${!isMobile && !expanded ? "ml-20" : ""}
+        `}
         style={{ marginTop: '64px' }}
       >
         <div className="p-4 md:p-6">

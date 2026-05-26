@@ -95,7 +95,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
         `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
         ${isActive 
           ? "bg-linear-to-r from-orange-500 to-orange-600 text-white shadow-md" 
-          : `text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 ${expanded ? "justify-start" : "justify-center"}`
+          : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
         }`
       }
     >
@@ -117,7 +117,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
       }
     >
       {Icon ? <Icon size={14} className="text-orange-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />}
-      {expanded && <span>{label}</span>}
+      <span>{label}</span>
     </NavLink>
   );
 
@@ -128,25 +128,33 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
     >
       <div className="flex items-center gap-3">
         <Icon size={18} />
-        {expanded && <span className="font-medium text-sm">{title}</span>}
+        <span className="font-medium text-sm">{title}</span>
       </div>
-      {expanded && (
-        <div className={`text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}>
-          <ChevronDown size={16} />
-        </div>
-      )}
+      <div className={`text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}>
+        <ChevronDown size={16} />
+      </div>
     </button>
   );
 
-  // For mobile when collapsed, position: absolute so it doesn't take space
-  // For desktop, position: fixed is fine
-  const sidebarPosition = isMobile && !expanded ? "absolute" : "fixed";
+  // On mobile: hide sidebar completely when collapsed, show as overlay when expanded
+  // On desktop: always show sidebar with margin
+  if (isMobile && !expanded) {
+    return (
+      <button
+        onClick={() => setExpanded(true)}
+        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+      >
+        <Menu size={20} className="text-gray-700 dark:text-gray-300" />
+      </button>
+    );
+  }
 
   return (
     <>
+      {/* Overlay for mobile when sidebar is expanded */}
       {isMobile && expanded && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity duration-300"
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300"
           onClick={() => {
             setExpanded(false);
             localStorage.setItem("sidebar", JSON.stringify(false));
@@ -154,103 +162,90 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
         />
       )}
       
+      {/* Sidebar */}
       <div
         ref={sidebarRef}
-        className={`${sidebarPosition} top-0 left-0 h-screen bg-white dark:bg-gray-900 shadow-lg flex flex-col transition-all duration-300 ease-in-out z-40
-        ${expanded ? "w-72" : "w-16"}
-        dark:border-r dark:border-gray-800`}
+        className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-900 shadow-xl flex flex-col transition-all duration-300 ease-in-out z-50
+        ${expanded ? "w-72" : "w-72"}
+        dark:border-r dark:border-gray-800
+        ${isMobile ? "shadow-2xl" : ""}`}
       >
+        {/* HEADER SECTION */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
-          {expanded && (
-            <img src={logo} className="w-24 object-contain dark:brightness-0 dark:invert" alt="Logo" />
-          )}
+          <img src={logo} className="w-24 object-contain dark:brightness-0 dark:invert" alt="Logo" />
           <button
-            onClick={() => setExpanded(!expanded)}
-            className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${!expanded ? "mx-auto" : ""}`}
+            onClick={() => setExpanded(false)}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
-            {expanded ? <X size={18} className="dark:text-gray-300" /> : <Menu size={18} className="dark:text-gray-300" />}
+            <X size={18} className="dark:text-gray-300" />
           </button>
         </div>
 
-        {expanded && (
-          <div className="flex-1 overflow-y-auto">
-            <nav className="flex flex-col gap-1 p-2">
-              <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-              <NavItem to="/cases" icon={FileText} label="Case Tracking" />
+        {/* MAIN NAVIGATION */}
+        <div className="flex-1 overflow-y-auto">
+          <nav className="flex flex-col gap-1 p-3">
+            <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+            <NavItem to="/cases" icon={FileText} label="Case Tracking" />
 
-              {isTechnician && (
-                <div ref={technicianRef}>
-                  <SectionButton 
-                    title="Technician" 
-                    icon={Wrench} 
-                    isOpen={openTechnician}
-                    onClick={() => {
-                      if (!expanded) {
-                        setExpanded(true);
-                        setTimeout(() => setOpenTechnician(true), 200);
-                      } else {
-                        setOpenTechnician(!openTechnician);
-                      }
-                    }}
-                  />
-                  {openTechnician && expanded && (
-                    <div className="ml-7 mt-1 flex flex-col gap-1">
-                      <SubItem to="/technician/my-cases" label="My Assigned Cases" icon={FileText} />
-                      <SubItem to="/technician/schedule" label="My Schedule" icon={Calendar} />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {isAdmin && (
-                <div ref={atmRef}>
-                  <SectionButton 
-                    title="ATM Case" 
-                    icon={Shield} 
-                    isOpen={openATM}
-                    onClick={() => {
-                      if (!expanded) {
-                        setExpanded(true);
-                        setTimeout(() => setOpenATM(true), 200);
-                      } else {
-                        setOpenATM(!openATM);
-                      }
-                    }}
-                  />
-                  {openATM && expanded && (
-                    <div className="ml-7 mt-1 flex flex-col gap-1">
-                      <SubItem to="/atm/manage" label="Manage Case" icon={PlusCircle} />
-                      <SubItem to="/atm/appoint" label="Appoint Technician" icon={UserCheck} />
-                      <SubItem to="/atm/terminate" label="Terminate Case" icon={XCircle} />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {isAdmin && (
-                <NavItem to="/technicians" icon={Users} label="Technicians" />
-              )}
-
-              <NavItem to="/reports" icon={ClipboardList} label="Reports" />
-            </nav>
-          </div>
-        )}
-
-        {expanded && (
-          <div className="border-t border-gray-100 dark:border-gray-800 p-3">
-            <button
-              onClick={toggleDarkMode}
-              className="w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-start"
-            >
-              <div className="flex items-center gap-3">
-                {darkMode ? <Sun size={18} className="text-yellow-500" /> : <Moon size={18} className="text-gray-600 dark:text-gray-400" />}
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {darkMode ? "Light Mode" : "Dark Mode"}
-                </span>
+            {/* TECHNICIAN SECTION */}
+            {isTechnician && (
+              <div ref={technicianRef}>
+                <SectionButton 
+                  title="Technician" 
+                  icon={Wrench} 
+                  isOpen={openTechnician}
+                  onClick={() => setOpenTechnician(!openTechnician)}
+                />
+                {openTechnician && (
+                  <div className="ml-7 mt-1 flex flex-col gap-1">
+                    <SubItem to="/technician/my-cases" label="My Assigned Cases" icon={FileText} />
+                    <SubItem to="/technician/schedule" label="My Schedule" icon={Calendar} />
+                  </div>
+                )}
               </div>
-            </button>
-          </div>
-        )}
+            )}
+
+            {/* ATM CASE SECTION - Admin */}
+            {isAdmin && (
+              <div ref={atmRef}>
+                <SectionButton 
+                  title="ATM Case" 
+                  icon={Shield} 
+                  isOpen={openATM}
+                  onClick={() => setOpenATM(!openATM)}
+                />
+                {openATM && (
+                  <div className="ml-7 mt-1 flex flex-col gap-1">
+                    <SubItem to="/atm/manage" label="Manage Case" icon={PlusCircle} />
+                    <SubItem to="/atm/appoint" label="Appoint Technician" icon={UserCheck} />
+                    <SubItem to="/atm/terminate" label="Terminate Case" icon={XCircle} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TECHNICIANS - Admin only */}
+            {isAdmin && (
+              <NavItem to="/technicians" icon={Users} label="Technicians" />
+            )}
+
+            {/* REPORTS */}
+            <NavItem to="/reports" icon={ClipboardList} label="Reports" />
+          </nav>
+        </div>
+
+        {/* DARK MODE TOGGLE */}
+        <div className="border-t border-gray-100 dark:border-gray-800 p-4">
+          <button
+            onClick={toggleDarkMode}
+            className="w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-start gap-3"
+          >
+            {darkMode ? <Sun size={18} className="text-yellow-500" /> : <Moon size={18} className="text-gray-600 dark:text-gray-400" />}
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {darkMode ? "Light Mode" : "Dark Mode"}
+            </span>
+          </button>
+        </div>
       </div>
     </>
   );
