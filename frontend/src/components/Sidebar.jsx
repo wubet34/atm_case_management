@@ -92,7 +92,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
       to={to}
       onClick={handleLinkClick}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
+        `flex items-center gap-3 px-3 py-2.5 rounded-xl
         ${isActive 
           ? "bg-linear-to-r from-orange-500 to-orange-600 text-white shadow-md" 
           : `text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 ${expanded ? "justify-start" : "justify-center"}`
@@ -109,7 +109,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
       to={to}
       onClick={handleLinkClick}
       className={({ isActive }) =>
-        `flex items-center gap-2 text-sm px-3 py-2 rounded-lg transition-all duration-200
+        `flex items-center gap-2 text-sm px-3 py-2 rounded-lg
         ${isActive 
           ? "text-orange-600 bg-orange-50/50 dark:text-orange-400 dark:bg-orange-900/20" 
           : "text-gray-600 hover:text-orange-600 hover:bg-orange-50/30 dark:text-gray-400 dark:hover:text-orange-400 dark:hover:bg-gray-800"
@@ -124,7 +124,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
   const SectionButton = ({ title, icon: Icon, isOpen, onClick }) => (
     <button
       onClick={onClick}
-      className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl transition-all duration-200 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+      className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
     >
       <div className="flex items-center gap-3">
         <Icon size={18} />
@@ -143,7 +143,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
     return (
       <button
         onClick={() => setExpanded(true)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700"
       >
         <Menu size={20} className="text-gray-700 dark:text-gray-300" />
       </button>
@@ -156,7 +156,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
       {/* Overlay for mobile when sidebar is expanded */}
       {isMobile && expanded && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300"
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={() => {
             setExpanded(false);
             localStorage.setItem("sidebar", JSON.stringify(false));
@@ -167,7 +167,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
       {/* Sidebar */}
       <div
         ref={sidebarRef}
-        className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-900 shadow-lg flex flex-col transition-all duration-300 ease-in-out z-50
+        className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-900 shadow-lg flex flex-col z-50
         ${expanded ? "w-72" : "w-20"}
         dark:border-r dark:border-gray-800
         ${isMobile && expanded ? "shadow-2xl" : ""}`}
@@ -179,7 +179,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
           )}
           <button
             onClick={() => setExpanded(!expanded)}
-            className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${!expanded ? "mx-auto" : ""}`}
+            className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 ${!expanded ? "mx-auto" : ""}`}
           >
             {expanded ? <X size={18} className="dark:text-gray-300" /> : <Menu size={18} className="dark:text-gray-300" />}
           </button>
@@ -256,7 +256,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
         <div className="border-t border-gray-100 dark:border-gray-800 p-3">
           <button
             onClick={toggleDarkMode}
-            className={`w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center ${expanded ? "justify-start" : "justify-center"}`}
+            className={`w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center ${expanded ? "justify-start" : "justify-center"}`}
           >
             <div className={`flex items-center gap-3 ${!expanded && "justify-center"}`}>
               {darkMode ? <Sun size={18} className="text-yellow-500" /> : <Moon size={18} className="text-gray-600 dark:text-gray-400" />}
