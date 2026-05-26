@@ -6,7 +6,6 @@ import {
 import { toast, Toaster } from 'react-hot-toast';
 import { useDarkMode } from '../context/DarkModeContext';
 import { useAuth } from '../context/AuthContext';
-import { authAPI } from '../services/api';
 
 const Settings = () => {
   const { darkMode, toggleDarkMode } = useDarkMode();
@@ -14,8 +13,13 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   
-  const isAdmin = user?.role === 'admin';
-  const isTechnician = user?.role === 'technician';
+  // Get role safely
+  const userRole = user?.role || localStorage.getItem('userRole') || 'technician';
+  const isAdmin = userRole === 'admin';
+  const isTechnician = userRole === 'technician';
+  
+  // Debug log
+  console.log('Settings - User role:', userRole, 'IsAdmin:', isAdmin);
 
   // Notification Settings
   const [notifications, setNotifications] = useState({
@@ -23,10 +27,10 @@ const Settings = () => {
     caseUpdates: true,
   });
 
-  // Security Settings - Login Alerts only for Admin
+  // Security Settings
   const [securitySettings, setSecuritySettings] = useState({
     sessionTimeout: '30',
-    loginAlerts: true  // This setting only applies to Admin
+    loginAlerts: true
   });
 
   // Password Change
@@ -44,7 +48,6 @@ const Settings = () => {
 
   const loadSettings = async () => {
     try {
-      // Load from localStorage as fallback
       const savedSettings = localStorage.getItem('appSettings');
       if (savedSettings) {
         const settings = JSON.parse(savedSettings);
@@ -64,7 +67,7 @@ const Settings = () => {
         security: securitySettings,
         updatedAt: new Date().toISOString(),
         userId: user?.id,
-        userRole: user?.role
+        userRole: userRole
       };
       localStorage.setItem('appSettings', JSON.stringify(settings));
       toast.success('Settings saved successfully');
@@ -169,7 +172,11 @@ const Settings = () => {
         <div className="flex justify-between items-center flex-wrap gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
-            <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-1">Manage your application preferences</p>
+            <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-1">
+              Manage your application preferences
+              {isAdmin && <span className="ml-2 text-orange-500">(Admin View)</span>}
+              {isTechnician && <span className="ml-2 text-blue-500">(Technician View)</span>}
+            </p>
           </div>
           <div className="flex gap-2">
             <button
@@ -240,7 +247,7 @@ const Settings = () => {
                 enabled={securitySettings.loginAlerts}
                 onChange={() => setSecuritySettings({...securitySettings, loginAlerts: !securitySettings.loginAlerts})}
                 label="Login Alerts"
-                description="Get notified via email when a new login occurs from an unrecognized device"
+                description="Get notified when a new login occurs"
               />
               
               <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
@@ -409,6 +416,11 @@ const Settings = () => {
           </div>
         </div>
       )}
+
+      {/* Role indicator badge for debugging */}
+      <div className="mt-4 text-center text-xs text-gray-400">
+        Current role: {isAdmin ? 'Administrator' : (isTechnician ? 'Technician' : 'Unknown')}
+      </div>
     </div>
   );
 };
