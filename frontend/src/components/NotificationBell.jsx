@@ -21,6 +21,22 @@ const NotificationBell = () => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
+
+  // Add this useEffect to initialize sound on first click
+useEffect(() => {
+  const initAudio = () => {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+    document.removeEventListener('click', initAudio);
+  };
+  
+  document.addEventListener('click', initAudio);
+  
+  return () => document.removeEventListener('click', initAudio);
+}, []);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -91,7 +107,7 @@ const NotificationBell = () => {
       >
         <Bell size={20} className="text-gray-600 dark:text-gray-400" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 animate-pulse">
+          <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 animate-pulse">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -147,6 +163,29 @@ const NotificationBell = () => {
                 </button>
               </div>
             </div>
+
+                // Add this button inside the component for testing
+<button 
+  onClick={() => {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.frequency.value = 880;
+    gainNode.gain.value = 0.3;
+    oscillator.start();
+    gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
+    oscillator.stop(audioContext.currentTime + 0.5);
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+  }}
+  className="ml-2 p-1 text-xs bg-gray-200 rounded"
+>
+  Test Sound
+</button>
+
 
             {/* Notifications List */}
             <div className="overflow-y-auto max-h-[60vh] lg:max-h-96">
