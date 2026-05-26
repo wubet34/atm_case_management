@@ -59,7 +59,6 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
     return () => window.removeEventListener("resize", handleResize);
   }, [expanded, setExpanded]);
 
-  // Close sidebar when clicking outside on mobile
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isMobile && expanded && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
@@ -96,7 +95,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
         `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
         ${isActive 
           ? "bg-linear-to-r from-orange-500 to-orange-600 text-white shadow-md" 
-          : `text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 ${expanded ? "justify-start" : "justify-center hidden"}`
+          : `text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 ${expanded ? "justify-start" : "justify-center"}`
         }`
       }
     >
@@ -114,18 +113,18 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
         ${isActive 
           ? "text-orange-600 bg-orange-50/50 dark:text-orange-400 dark:bg-orange-900/20" 
           : "text-gray-600 hover:text-orange-600 hover:bg-orange-50/30 dark:text-gray-400 dark:hover:text-orange-400 dark:hover:bg-gray-800"
-        } ${!expanded && "hidden"}`
+        }`
       }
     >
       {Icon ? <Icon size={14} className="text-orange-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />}
-      <span>{label}</span>
+      {expanded && <span>{label}</span>}
     </NavLink>
   );
 
   const SectionButton = ({ title, icon: Icon, isOpen, onClick }) => (
     <button
       onClick={onClick}
-      className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl transition-all duration-200 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 ${!expanded && "hidden"}`}
+      className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl transition-all duration-200 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
     >
       <div className="flex items-center gap-3">
         <Icon size={18} />
@@ -139,9 +138,12 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
     </button>
   );
 
+  // For mobile when collapsed, position: absolute so it doesn't take space
+  // For desktop, position: fixed is fine
+  const sidebarPosition = isMobile && !expanded ? "absolute" : "fixed";
+
   return (
     <>
-      {/* Overlay for mobile when sidebar is expanded */}
       {isMobile && expanded && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity duration-300"
@@ -152,16 +154,12 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
         />
       )}
       
-      {/* Sidebar */}
       <div
         ref={sidebarRef}
-        className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-900 shadow-lg flex flex-col transition-all duration-300 ease-in-out z-40
+        className={`${sidebarPosition} top-0 left-0 h-screen bg-white dark:bg-gray-900 shadow-lg flex flex-col transition-all duration-300 ease-in-out z-40
         ${expanded ? "w-72" : "w-16"}
-        dark:border-r dark:border-gray-800
-        ${isMobile && expanded ? "shadow-2xl" : ""}
-        ${isMobile && !expanded ? "shadow-sm" : ""}`}
+        dark:border-r dark:border-gray-800`}
       >
-        {/* HEADER SECTION */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
           {expanded && (
             <img src={logo} className="w-24 object-contain dark:brightness-0 dark:invert" alt="Logo" />
@@ -174,7 +172,6 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
           </button>
         </div>
 
-        {/* MAIN NAVIGATION */}
         {expanded && (
           <div className="flex-1 overflow-y-auto">
             <nav className="flex flex-col gap-1 p-2">
@@ -239,7 +236,6 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
           </div>
         )}
 
-        {/* DARK MODE TOGGLE */}
         {expanded && (
           <div className="border-t border-gray-100 dark:border-gray-800 p-3">
             <button
