@@ -3,6 +3,32 @@ import { notificationAPI } from '../services/api';
 import socketService from '../services/socket';
 import { toast } from 'react-hot-toast';
 
+// Create notification sound
+const notificationSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 880;
+    gainNode.gain.value = 0.3;
+    
+    oscillator.start();
+    gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
+    oscillator.stop(audioContext.currentTime + 0.5);
+    
+    // Resume audio context if suspended
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+  } catch (error) {
+    console.error('Error playing sound:', error);
+  }
+};
+
 const NotificationContext = createContext();
 
 export const useNotifications = () => {
@@ -19,6 +45,7 @@ export const NotificationProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const notificationIdsRef = useRef(new Set());
   const pollingIntervalRef = useRef(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   // Improved getRelativeTime with better formatting
   const getRelativeTime = (timestamp) => {
@@ -139,34 +166,38 @@ export const NotificationProvider = ({ children }) => {
   }, [loadNotifications]);
 
   // Set up socket listeners for real-time updates
-  // Update the socket listener section
-useEffect(() => {
-  console.log('Setting up socket listeners...');
-  
-  // Listen for new notifications
-  const handleNewNotification = (notification) => {
-    console.log('🔥 New notification received via socket:', notification);
+  useEffect(() => {
+    console.log('Setting up socket listeners...');
     
-    // Immediately reload notifications
-    loadNotifications();
+    // Listen for new notifications
+    const handleNewNotification = (notification) => {
+      console.log('🔥 New notification received via socket:', notification);
+      
+      // Play sound when new notification arrives
+      if (soundEnabled) {
+        notificationSound();
+      }
+      
+      // Immediately reload notifications
+      loadNotifications();
+      
+      // Show toast
+      showToastNotification(notification);
+    };
     
-    // Show toast
-    showToastNotification(notification);
-  };
-  
-  const handleUnreadCountUpdate = (data) => {
-    console.log('📊 Unread count update via socket:', data);
-    setUnreadCount(data.unreadCount);
-  };
-  
-  socketService.onNewNotification(handleNewNotification);
-  socketService.onUnreadCountUpdate(handleUnreadCountUpdate);
+    const handleUnreadCountUpdate = (data) => {
+      console.log('📊 Unread count update via socket:', data);
+      setUnreadCount(data.unreadCount);
+    };
+    
+    socketService.onNewNotification(handleNewNotification);
+    socketService.onUnreadCountUpdate(handleUnreadCountUpdate);
 
-  return () => {
-    socketService.off('new-notification', handleNewNotification);
-    socketService.off('unread-count-update', handleUnreadCountUpdate);
-  };
-}, [loadNotifications]);
+    return () => {
+      socketService.off('new-notification', handleNewNotification);
+      socketService.off('unread-count-update', handleUnreadCountUpdate);
+    };
+  }, [loadNotifications, soundEnabled]);
 
   // Polling as fallback (every 30 seconds)
   useEffect(() => {
@@ -174,10 +205,19 @@ useEffect(() => {
       clearInterval(pollingIntervalRef.current);
     }
     
-    pollingIntervalRef.current = setInterval(() => {
+    let lastNotificationCount = notifications.length;
+    
+    pollingIntervalRef.current = setInterval(async () => {
       // Only poll if socket is not connected
       if (!socketService.isConnected) {
         console.log('Polling for notifications (fallback)...');
+        const response = await notificationAPI.getAll();
+        const newCount = response.data?.length || 0;
+        
+        if (newCount > lastNotificationCount && soundEnabled) {
+          notificationSound();
+        }
+        lastNotificationCount = newCount;
         loadNotifications();
       }
     }, 30000);
@@ -187,7 +227,7 @@ useEffect(() => {
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [loadNotifications]);
+  }, [loadNotifications, soundEnabled, notifications.length]);
 
   const addNotification = (notification) => {
     loadNotifications();
