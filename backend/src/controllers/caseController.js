@@ -64,8 +64,8 @@ const createCase = async (req, res) => {
       const notification = await createNotification(
         admin.id,
         'case_created',
-        'የአዲስ ጉዳይ ፈጠራ',
-        `አዲስ ጉዳይ ${caseItem.case_id} በ ${caseItem.atm_name} ተፈጥሯል`,
+        'New Case Created',
+        `New case ${caseItem.case_id} has been created at ${caseItem.atm_name}`,
         caseItem.id
       );
       emitNotification(io, admin.id, notification);
@@ -150,8 +150,8 @@ const appointTechnician = async (req, res) => {
     const notification = await createNotification(
       technicianId,
       'case_appointed',
-      'ለእርስዎ ጉዳይ ተመድቧል',
-      `እርስዎ ለጉዳይ ${updatedCase.case_id} በ ${updatedCase.atm_name} ተመድበዋል`,
+      'Case Assigned',
+      `You have been assigned to case ${updatedCase.case_id} at ${updatedCase.atm_name}`,
       updatedCase.id
     );
     
@@ -165,8 +165,8 @@ const appointTechnician = async (req, res) => {
       const adminNotification = await createNotification(
         admin.id,
         'case_appointed',
-        'ባለሙያ ተመድቧል',
-        `${technician.name} ለጉዳይ ${updatedCase.case_id} ተመድቧል`,
+        'Technician Appointed',
+        `${technician.name} has been appointed to case ${updatedCase.case_id}`,
         updatedCase.id
       );
       emitNotification(io, admin.id, adminNotification);
@@ -212,8 +212,8 @@ const startWork = async (req, res) => {
     const notification = await createNotification(
       req.user.id,
       'case_started',
-      'ሥራ ተጀምሯል',
-      `በጉዳይ ${updatedCase.case_id} ላይ መሥራት ጀምረዋል`,
+      'Work Started',
+      `You have started working on case ${updatedCase.case_id}`,
       updatedCase.id
     );
     emitNotification(io, req.user.id, notification);
@@ -224,8 +224,8 @@ const startWork = async (req, res) => {
       const adminNotification = await createNotification(
         admin.id,
         'case_started',
-        'ሥራ ተጀምሯል',
-        `${req.user.name} በጉዳይ ${updatedCase.case_id} ላይ መሥራት ጀምረዋል`,
+        'Work Started',
+        `${req.user.name} has started working on case ${updatedCase.case_id}`,
         updatedCase.id
       );
       emitNotification(io, admin.id, adminNotification);
@@ -262,8 +262,8 @@ const completeWork = async (req, res) => {
     const notification = await createNotification(
       req.user.id,
       'case_completed',
-      'ሥራ ተጠናቋል',
-      `በጉዳይ ${updatedCase.case_id} ላይ ያከናወኑት ሥራ ተጠናቋል። እንኳን ደስ ያለዎት!`,
+      'Case Completed',
+      `Congratulations! You have completed case ${updatedCase.case_id}`,
       updatedCase.id
     );
     emitNotification(io, req.user.id, notification);
@@ -273,8 +273,8 @@ const completeWork = async (req, res) => {
       const adminNotification = await createNotification(
         caseItem.created_by,
         'case_completed',
-        'ጉዳይ ተጠናቋል',
-        `ጉዳይ ${updatedCase.case_id} በ ${req.user.name} ተጠናቋል`,
+        'Case Completed',
+        `Case ${updatedCase.case_id} has been completed by ${req.user.name}`,
         updatedCase.id
       );
       emitNotification(io, caseItem.created_by, adminNotification);
@@ -287,8 +287,8 @@ const completeWork = async (req, res) => {
         const otherAdminNotification = await createNotification(
           admin.id,
           'case_completed',
-          'ጉዳይ ተጠናቋል',
-          `ጉዳይ ${updatedCase.case_id} በ ${req.user.name} ተጠናቋል`,
+          'Case Completed',
+          `Case ${updatedCase.case_id} has been completed by ${req.user.name}`,
           updatedCase.id
         );
         emitNotification(io, admin.id, otherAdminNotification);
@@ -324,8 +324,8 @@ const terminateCase = async (req, res) => {
       const notification = await createNotification(
         caseItem.technician_id,
         'case_terminated',
-        'ጉዳይ ተቋርጧል',
-        `ጉዳይ ${updatedCase.case_id} ተቋርጧል። ምክንያት: ${reason}`,
+        'Case Terminated',
+        `Case ${updatedCase.case_id} has been terminated. Reason: ${reason}`,
         updatedCase.id
       );
       emitNotification(io, caseItem.technician_id, notification);
@@ -337,8 +337,8 @@ const terminateCase = async (req, res) => {
       const adminNotification = await createNotification(
         admin.id,
         'case_terminated',
-        'ጉዳይ ተቋርጧል',
-        `ጉዳይ ${updatedCase.case_id} በ ${req.user.name} ተቋርጧል። ምክንያት: ${reason}`,
+        'Case Terminated',
+        `Case ${updatedCase.case_id} has been terminated by ${req.user.name}. Reason: ${reason}`,
         updatedCase.id
       );
       emitNotification(io, admin.id, adminNotification);
