@@ -10,11 +10,9 @@ import {
 } from "lucide-react";
 
 function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded }) {
-  // Use props if provided, otherwise use internal state
   const [internalExpanded, setInternalExpanded] = useState(() => {
     const saved = localStorage.getItem("sidebar");
     const isDesktop = window.innerWidth >= 1024;
-    // On mobile, always start collapsed (only show menu icon)
     if (!isDesktop) {
       return false;
     }
@@ -46,7 +44,6 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
   const isAdmin = user?.role === 'admin' || userData?.role === 'admin';
   const isTechnician = user?.role === 'technician' || userData?.role === 'technician';
 
-  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
@@ -55,12 +52,6 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
       if (!isDesktop && expanded) {
         setExpanded(false);
         localStorage.setItem("sidebar", JSON.stringify(false));
-      } else if (isDesktop && !expanded) {
-        const saved = localStorage.getItem("sidebar");
-        if (saved === null) {
-          setExpanded(true);
-          localStorage.setItem("sidebar", JSON.stringify(true));
-        }
       }
     };
 
@@ -167,9 +158,10 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
         className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-900 shadow-lg flex flex-col transition-all duration-300 ease-in-out z-40
         ${expanded ? "w-72" : "w-16"}
         dark:border-r dark:border-gray-800
-        ${isMobile && expanded ? "shadow-2xl" : ""}`}
+        ${isMobile && expanded ? "shadow-2xl" : ""}
+        ${isMobile && !expanded ? "shadow-sm" : ""}`}
       >
-        {/* HEADER SECTION - Only menu icon on mobile when collapsed */}
+        {/* HEADER SECTION */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
           {expanded && (
             <img src={logo} className="w-24 object-contain dark:brightness-0 dark:invert" alt="Logo" />
@@ -182,14 +174,13 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
           </button>
         </div>
 
-        {/* MAIN NAVIGATION - Hidden when collapsed */}
+        {/* MAIN NAVIGATION */}
         {expanded && (
           <div className="flex-1 overflow-y-auto">
             <nav className="flex flex-col gap-1 p-2">
               <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
               <NavItem to="/cases" icon={FileText} label="Case Tracking" />
 
-              {/* TECHNICIAN SECTION */}
               {isTechnician && (
                 <div ref={technicianRef}>
                   <SectionButton 
@@ -214,7 +205,6 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
                 </div>
               )}
 
-              {/* ATM CASE SECTION - Admin */}
               {isAdmin && (
                 <div ref={atmRef}>
                   <SectionButton 
@@ -240,18 +230,16 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
                 </div>
               )}
 
-              {/* TECHNICIANS - Admin only */}
               {isAdmin && (
                 <NavItem to="/technicians" icon={Users} label="Technicians" />
               )}
 
-              {/* REPORTS */}
               <NavItem to="/reports" icon={ClipboardList} label="Reports" />
             </nav>
           </div>
         )}
 
-        {/* DARK MODE TOGGLE - Only visible when expanded */}
+        {/* DARK MODE TOGGLE */}
         {expanded && (
           <div className="border-t border-gray-100 dark:border-gray-800 p-3">
             <button

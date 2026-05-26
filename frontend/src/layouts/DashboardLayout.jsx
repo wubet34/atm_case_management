@@ -8,7 +8,6 @@ function DashboardLayout() {
   const [expanded, setExpanded] = useState(() => {
     const saved = localStorage.getItem("sidebar");
     const isDesktop = window.innerWidth >= 1024;
-    // On mobile, default to collapsed (showing only menu icon)
     if (!isDesktop) {
       return false;
     }
@@ -22,7 +21,6 @@ function DashboardLayout() {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      // Auto-collapse on mobile if expanded
       if (mobile && expanded) {
         setExpanded(false);
         localStorage.setItem("sidebar", JSON.stringify(false));
@@ -52,25 +50,17 @@ function DashboardLayout() {
     };
   }, []);
 
-  // Calculate margin based on sidebar state and device
-  let marginLeft = "ml-0";
-  if (!isMobile && expanded) {
-    marginLeft = "ml-72";
-  } else if (!isMobile && !expanded) {
-    marginLeft = "ml-20";
-  } else if (isMobile && expanded) {
-    marginLeft = "ml-72";
-  } else {
-    marginLeft = "ml-0"; // On mobile collapsed - full width, no margin
-  }
-
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark' : ''}`}>
       <Sidebar expanded={expanded} setExpanded={setExpanded} />
-      <TopNavbar sidebarWidth={expanded && !isMobile ? (expanded ? 288 : 80) : 0} />
-      {/* Main content with dynamic margin */}
+      <TopNavbar sidebarWidth={!isMobile && expanded ? 288 : 0} />
+      
+      {/* Main content - on mobile, no margin when collapsed */}
       <main 
-        className={`transition-all duration-300 ease-in-out bg-gray-50 dark:bg-gray-950 min-h-screen ${marginLeft}`}
+        className={`transition-all duration-300 ease-in-out bg-gray-50 dark:bg-gray-950 min-h-screen
+          ${!isMobile && expanded ? "ml-72" : ""}
+          ${!isMobile && !expanded ? "ml-20" : ""}
+        `}
         style={{ marginTop: '64px' }}
       >
         <div className="p-4 md:p-6">
