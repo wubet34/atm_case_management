@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Bell, Moon, Sun, Lock, Shield, Mail, Eye, EyeOff, Save, X,
-  Database, RefreshCw
+  Database, RefreshCw, AlertTriangle, UserCheck
 } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 import { useDarkMode } from '../context/DarkModeContext';
@@ -14,16 +14,19 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   
+  const isAdmin = user?.role === 'admin';
+  const isTechnician = user?.role === 'technician';
+
   // Notification Settings
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
     caseUpdates: true,
   });
 
-  // Security Settings
+  // Security Settings - Login Alerts only for Admin
   const [securitySettings, setSecuritySettings] = useState({
     sessionTimeout: '30',
-    loginAlerts: true
+    loginAlerts: true  // This setting only applies to Admin
   });
 
   // Password Change
@@ -41,14 +44,7 @@ const Settings = () => {
 
   const loadSettings = async () => {
     try {
-      // TODO: Replace with actual API endpoint to get user settings
-      // const response = await authAPI.getSettings();
-      // if (response.success) {
-      //   setNotifications(response.data.notifications);
-      //   setSecuritySettings(response.data.security);
-      // }
-      
-      // For now, load from localStorage as fallback
+      // Load from localStorage as fallback
       const savedSettings = localStorage.getItem('appSettings');
       if (savedSettings) {
         const settings = JSON.parse(savedSettings);
@@ -63,23 +59,12 @@ const Settings = () => {
   const saveSettings = async () => {
     setLoading(true);
     try {
-      // TODO: Replace with actual API endpoint
-      // const response = await authAPI.updateSettings({
-      //   notifications,
-      //   security: securitySettings
-      // });
-      // if (response.success) {
-      //   toast.success('Settings saved successfully');
-      // } else {
-      //   toast.error(response.message || 'Failed to save settings');
-      // }
-      
-      // For now, save to localStorage
       const settings = {
         notifications,
         security: securitySettings,
         updatedAt: new Date().toISOString(),
-        userId: user?.id
+        userId: user?.id,
+        userRole: user?.role
       };
       localStorage.setItem('appSettings', JSON.stringify(settings));
       toast.success('Settings saved successfully');
@@ -211,7 +196,7 @@ const Settings = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Appearance Section */}
+        {/* Appearance Section - Both Roles */}
         <SettingSection title="Appearance" icon={Sun}>
           <div className="space-y-4">
             <div className="flex items-center justify-between py-3">
@@ -229,7 +214,7 @@ const Settings = () => {
           </div>
         </SettingSection>
 
-        {/* Notifications Section */}
+        {/* Notifications Section - Both Roles */}
         <SettingSection title="Notifications" icon={Bell}>
           <div className="space-y-2">
             <ToggleSwitch
@@ -247,33 +232,63 @@ const Settings = () => {
           </div>
         </SettingSection>
 
-        {/* Security Section */}
-        <SettingSection title="Security" icon={Shield}>
-          <div className="space-y-2">
-            <ToggleSwitch
-              enabled={securitySettings.loginAlerts}
-              onChange={() => setSecuritySettings({...securitySettings, loginAlerts: !securitySettings.loginAlerts})}
-              label="Login Alerts"
-              description="Get notified on new login attempts"
-            />
-            
-            <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Session Timeout</label>
-              <select
-                value={securitySettings.sessionTimeout}
-                onChange={(e) => setSecuritySettings({...securitySettings, sessionTimeout: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="15">15 minutes</option>
-                <option value="30">30 minutes</option>
-                <option value="60">1 hour</option>
-                <option value="120">2 hours</option>
-              </select>
+        {/* Security Section - Admin Only */}
+        {isAdmin && (
+          <SettingSection title="Security" icon={Shield}>
+            <div className="space-y-2">
+              <ToggleSwitch
+                enabled={securitySettings.loginAlerts}
+                onChange={() => setSecuritySettings({...securitySettings, loginAlerts: !securitySettings.loginAlerts})}
+                label="Login Alerts"
+                description="Get notified via email when a new login occurs from an unrecognized device"
+              />
+              
+              <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Session Timeout</label>
+                <select
+                  value={securitySettings.sessionTimeout}
+                  onChange={(e) => setSecuritySettings({...securitySettings, sessionTimeout: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="15">15 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="60">1 hour</option>
+                  <option value="120">2 hours</option>
+                </select>
+              </div>
             </div>
-          </div>
-        </SettingSection>
+          </SettingSection>
+        )}
 
-        {/* Change Password Section */}
+        {/* Security Info - For Technician (read-only) */}
+        {isTechnician && (
+          <SettingSection title="Security" icon={Shield}>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <UserCheck size={20} className="text-blue-500" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">Account Security</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Your account is protected. Contact admin for security settings changes.</p>
+                </div>
+              </div>
+              <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Session Timeout</label>
+                <select
+                  value={securitySettings.sessionTimeout}
+                  onChange={(e) => setSecuritySettings({...securitySettings, sessionTimeout: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="15">15 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="60">1 hour</option>
+                  <option value="120">2 hours</option>
+                </select>
+              </div>
+            </div>
+          </SettingSection>
+        )}
+
+        {/* Change Password Section - Both Roles */}
         <SettingSection title="Change Password" icon={Lock}>
           <div className="space-y-4">
             <div>
@@ -342,56 +357,58 @@ const Settings = () => {
         </SettingSection>
       </div>
 
-      {/* Data Management Section */}
-      <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 dark:border-gray-700">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
-              <Database size={20} className="text-red-600 dark:text-red-400" />
+      {/* Data Management Section - Admin Only */}
+      {isAdmin && (
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                <Database size={20} className="text-red-600 dark:text-red-400" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Data Management</h2>
             </div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Data Management</h2>
+          </div>
+          <div className="p-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={() => {
+                  const data = {
+                    user: localStorage.getItem('user'),
+                    settings: localStorage.getItem('appSettings'),
+                    exportDate: new Date().toISOString()
+                  };
+                  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `settings_backup_${new Date().toISOString().split('T')[0]}.json`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast.success('Data exported successfully');
+                }}
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+              >
+                Export Data
+              </button>
+              <button
+                onClick={() => {
+                  if (window.confirm('Clear all application data? This action cannot be undone! You will need to login again.')) {
+                    localStorage.clear();
+                    toast.success('Data cleared. Page will reload.');
+                    setTimeout(() => window.location.reload(), 1500);
+                  }
+                }}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+              >
+                Clear Local Data
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+              ⚠️ Clearing data will remove all local settings and require re-login.
+            </p>
           </div>
         </div>
-        <div className="p-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <button
-              onClick={() => {
-                const data = {
-                  user: localStorage.getItem('user'),
-                  settings: localStorage.getItem('appSettings'),
-                  exportDate: new Date().toISOString()
-                };
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `settings_backup_${new Date().toISOString().split('T')[0]}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast.success('Data exported successfully');
-              }}
-              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-            >
-              Export Data
-            </button>
-            <button
-              onClick={() => {
-                if (window.confirm('Clear all application data? This action cannot be undone! You will need to login again.')) {
-                  localStorage.clear();
-                  toast.success('Data cleared. Page will reload.');
-                  setTimeout(() => window.location.reload(), 1500);
-                }
-              }}
-              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-            >
-              Clear Local Data
-            </button>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
-            ⚠️ Clearing data will remove all local settings and require re-login.
-          </p>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
