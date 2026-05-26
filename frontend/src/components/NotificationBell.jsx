@@ -3,6 +3,7 @@ import { Bell, CheckCheck, Trash2, X, Clock, FileText, UserCheck, Wrench, AlertT
 import { useNotifications } from '../context/NotificationContext';
 import { useDarkMode } from '../context/DarkModeContext';
 import { useNavigate } from 'react-router-dom';
+import notificationSound from '../services/notificationSound';
 
 const NotificationBell = () => {
   const { darkMode } = useDarkMode();
@@ -31,6 +32,7 @@ const NotificationBell = () => {
   }, []);
 
   const handleOpen = async () => {
+    notificationSound.init();
     setIsOpen(true);
     await refreshNotifications();
   };
