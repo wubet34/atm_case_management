@@ -19,7 +19,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
     if (saved !== null) {
       return JSON.parse(saved);
     }
-    return isDesktop;
+    return true;
   });
 
   const expanded = externalExpanded !== undefined ? externalExpanded : internalExpanded;
@@ -95,7 +95,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
         `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
         ${isActive 
           ? "bg-linear-to-r from-orange-500 to-orange-600 text-white shadow-md" 
-          : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+          : `text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 ${expanded ? "justify-start" : "justify-center"}`
         }`
       }
     >
@@ -117,7 +117,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
       }
     >
       {Icon ? <Icon size={14} className="text-orange-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />}
-      <span>{label}</span>
+      {expanded && <span>{label}</span>}
     </NavLink>
   );
 
@@ -128,16 +128,17 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
     >
       <div className="flex items-center gap-3">
         <Icon size={18} />
-        <span className="font-medium text-sm">{title}</span>
+        {expanded && <span className="font-medium text-sm">{title}</span>}
       </div>
-      <div className={`text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}>
-        <ChevronDown size={16} />
-      </div>
+      {expanded && (
+        <div className={`text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}>
+          <ChevronDown size={16} />
+        </div>
+      )}
     </button>
   );
 
-  // On mobile: hide sidebar completely when collapsed, show as overlay when expanded
-  // On desktop: always show sidebar with margin
+  // MOBILE: When collapsed, only show menu button
   if (isMobile && !expanded) {
     return (
       <button
@@ -149,6 +150,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
     );
   }
 
+  // MOBILE EXPANDED OR DESKTOP: Show full sidebar
   return (
     <>
       {/* Overlay for mobile when sidebar is expanded */}
@@ -165,25 +167,27 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
       {/* Sidebar */}
       <div
         ref={sidebarRef}
-        className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-900 shadow-xl flex flex-col transition-all duration-300 ease-in-out z-50
-        ${expanded ? "w-72" : "w-72"}
+        className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-900 shadow-lg flex flex-col transition-all duration-300 ease-in-out z-50
+        ${expanded ? "w-72" : "w-20"}
         dark:border-r dark:border-gray-800
-        ${isMobile ? "shadow-2xl" : ""}`}
+        ${isMobile && expanded ? "shadow-2xl" : ""}`}
       >
         {/* HEADER SECTION */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
-          <img src={logo} className="w-24 object-contain dark:brightness-0 dark:invert" alt="Logo" />
+          {expanded && (
+            <img src={logo} className="w-24 object-contain dark:brightness-0 dark:invert" alt="Logo" />
+          )}
           <button
-            onClick={() => setExpanded(false)}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            onClick={() => setExpanded(!expanded)}
+            className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${!expanded ? "mx-auto" : ""}`}
           >
-            <X size={18} className="dark:text-gray-300" />
+            {expanded ? <X size={18} className="dark:text-gray-300" /> : <Menu size={18} className="dark:text-gray-300" />}
           </button>
         </div>
 
         {/* MAIN NAVIGATION */}
         <div className="flex-1 overflow-y-auto">
-          <nav className="flex flex-col gap-1 p-3">
+          <nav className="flex flex-col gap-1 p-2">
             <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
             <NavItem to="/cases" icon={FileText} label="Case Tracking" />
 
@@ -194,9 +198,16 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
                   title="Technician" 
                   icon={Wrench} 
                   isOpen={openTechnician}
-                  onClick={() => setOpenTechnician(!openTechnician)}
+                  onClick={() => {
+                    if (!expanded) {
+                      setExpanded(true);
+                      setTimeout(() => setOpenTechnician(true), 200);
+                    } else {
+                      setOpenTechnician(!openTechnician);
+                    }
+                  }}
                 />
-                {openTechnician && (
+                {openTechnician && expanded && (
                   <div className="ml-7 mt-1 flex flex-col gap-1">
                     <SubItem to="/technician/my-cases" label="My Assigned Cases" icon={FileText} />
                     <SubItem to="/technician/schedule" label="My Schedule" icon={Calendar} />
@@ -212,9 +223,16 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
                   title="ATM Case" 
                   icon={Shield} 
                   isOpen={openATM}
-                  onClick={() => setOpenATM(!openATM)}
+                  onClick={() => {
+                    if (!expanded) {
+                      setExpanded(true);
+                      setTimeout(() => setOpenATM(true), 200);
+                    } else {
+                      setOpenATM(!openATM);
+                    }
+                  }}
                 />
-                {openATM && (
+                {openATM && expanded && (
                   <div className="ml-7 mt-1 flex flex-col gap-1">
                     <SubItem to="/atm/manage" label="Manage Case" icon={PlusCircle} />
                     <SubItem to="/atm/appoint" label="Appoint Technician" icon={UserCheck} />
@@ -235,15 +253,19 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
         </div>
 
         {/* DARK MODE TOGGLE */}
-        <div className="border-t border-gray-100 dark:border-gray-800 p-4">
+        <div className="border-t border-gray-100 dark:border-gray-800 p-3">
           <button
             onClick={toggleDarkMode}
-            className="w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-start gap-3"
+            className={`w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center ${expanded ? "justify-start" : "justify-center"}`}
           >
-            {darkMode ? <Sun size={18} className="text-yellow-500" /> : <Moon size={18} className="text-gray-600 dark:text-gray-400" />}
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {darkMode ? "Light Mode" : "Dark Mode"}
-            </span>
+            <div className={`flex items-center gap-3 ${!expanded && "justify-center"}`}>
+              {darkMode ? <Sun size={18} className="text-yellow-500" /> : <Moon size={18} className="text-gray-600 dark:text-gray-400" />}
+              {expanded && (
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {darkMode ? "Light Mode" : "Dark Mode"}
+                </span>
+              )}
+            </div>
           </button>
         </div>
       </div>
