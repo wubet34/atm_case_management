@@ -19,6 +19,7 @@ const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const [processedIds, setProcessedIds] = useState(new Set());
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -89,14 +90,14 @@ const NotificationBell = () => {
       >
         <Bell size={20} className="text-gray-600 dark:text-gray-400" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
-            {unreadCount > 9 ? '9+' : unreadCount}
+          <span className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1 animate-pulse">
+            {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-[calc(100vw-2rem)] sm:max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden">
           {/* Header */}
           <div className="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700">
             <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
@@ -128,8 +129,8 @@ const NotificationBell = () => {
             </div>
           </div>
 
-          {/* Notifications List */}
-          <div className="max-h-96 overflow-y-auto">
+          {/* Notifications List - Fixed mobile overflow */}
+          <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <Bell size={40} className="mx-auto mb-2 opacity-50" />
@@ -139,27 +140,27 @@ const NotificationBell = () => {
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`group p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer ${
+                  className={`group p-3 sm:p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer ${
                     !notification.read ? 'bg-orange-50/30 dark:bg-orange-900/10' : ''
                   }`}
                   onClick={() => handleNotificationClick(notification)}
                 >
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0">
+                  <div className="flex gap-2 sm:gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
                       {getNotificationIcon(notification.type)}
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900 dark:text-white">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm text-gray-900 dark:text-white break-words">
                         {notification.message || notification.title}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
+                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
                         <Clock size={10} />
                         {getRelativeTime(notification.created_at || notification.timestamp)}
                       </p>
                     </div>
                     <button
                       onClick={(e) => handleDeleteNotification(e, notification.id)}
-                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity flex-shrink-0"
                       aria-label="Delete notification"
                     >
                       <X size={14} />

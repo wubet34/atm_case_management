@@ -5,7 +5,7 @@ import { useDarkMode } from "../context/DarkModeContext";
 import { useAuth } from "../context/AuthContext";
 import {
   Menu, X, LayoutDashboard, FileText, ClipboardList,
-  Shield, ChevronDown, ChevronRight, Dot, Users,
+  Shield, ChevronDown, Users,
   Moon, Sun, PlusCircle, UserCheck, XCircle, Wrench, Calendar
 } from "lucide-react";
 
@@ -25,7 +25,6 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
 
   const [openATM, setOpenATM] = useState(false);
   const [openTechnician, setOpenTechnician] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState(null);
   
   const { darkMode, toggleDarkMode } = useDarkMode();
   const { user } = useAuth();
@@ -79,87 +78,54 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
   };
 
   const NavItem = ({ to, icon: Icon, label }) => (
-    <div className="relative">
-      <NavLink
-        to={to}
-        onClick={handleLinkClick}
-        onMouseEnter={() => setHoveredItem(label)}
-        onMouseLeave={() => setHoveredItem(null)}
-        className={({ isActive }) =>
-          `flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200
-          ${isActive 
-            ? "bg-linear-to-r from-orange-500 to-orange-600 text-white shadow-md" 
-            : `text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 ${expanded ? "justify-start" : "justify-center"}`
-          }`
-        }
-      >
-        <Icon size={22} />
-        {expanded && <span className="font-medium text-base">{label}</span>}
-      </NavLink>
-      {/* Tooltip for collapsed mode */}
-      {!expanded && hoveredItem === label && (
-        <div className="fixed left-20 top-1/2 transform -translate-y-1/2 ml-2 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-md whitespace-nowrap z-100 shadow-lg">
-          {label}
-          <div className="absolute left-0 top-1/2 transform -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
-        </div>
-      )}
-    </div>
+    <NavLink
+      to={to}
+      onClick={handleLinkClick}
+      className={({ isActive }) =>
+        `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
+        ${isActive 
+          ? "bg-linear-to-r from-orange-500 to-orange-600 text-white shadow-md" 
+          : `text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 ${expanded ? "justify-start" : "justify-center"}`
+        }`
+      }
+    >
+      <Icon size={18} />
+      {expanded && <span className="font-medium text-sm">{label}</span>}
+    </NavLink>
   );
 
   const SubItem = ({ to, label, icon: Icon }) => (
-    <div className="relative">
-      <NavLink
-        to={to}
-        onClick={handleLinkClick}
-        onMouseEnter={() => setHoveredItem(label)}
-        onMouseLeave={() => setHoveredItem(null)}
-        className={({ isActive }) =>
-          `flex items-center gap-2 text-sm px-3 py-2 rounded-lg transition-all duration-200
-          ${isActive 
-            ? "text-orange-600 bg-orange-50/50 dark:text-orange-400 dark:bg-orange-900/20" 
-            : "text-gray-600 hover:text-orange-600 hover:bg-orange-50/30 dark:text-gray-400 dark:hover:text-orange-400 dark:hover:bg-gray-800"
-          }`
-        }
-      >
-        {Icon ? <Icon size={16} className="text-orange-500" /> : <Dot size={18} className="text-orange-500" />}
-        <span>{label}</span>
-      </NavLink>
-      {/* Tooltip for collapsed mode */}
-      {!expanded && hoveredItem === label && (
-        <div className="fixed left-20 top-1/2 transform -translate-y-1/2 ml-2 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-md whitespace-nowrap z-100 shadow-lg">
-          {label}
-          <div className="absolute left-0 top-1/2 transform -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
-        </div>
-      )}
-    </div>
+    <NavLink
+      to={to}
+      onClick={handleLinkClick}
+      className={({ isActive }) =>
+        `flex items-center gap-2 text-sm px-3 py-2 rounded-lg transition-all duration-200
+        ${isActive 
+          ? "text-orange-600 bg-orange-50/50 dark:text-orange-400 dark:bg-orange-900/20" 
+          : "text-gray-600 hover:text-orange-600 hover:bg-orange-50/30 dark:text-gray-400 dark:hover:text-orange-400 dark:hover:bg-gray-800"
+        }`
+      }
+    >
+      {Icon ? <Icon size={14} className="text-orange-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />}
+      <span>{label}</span>
+    </NavLink>
   );
 
   const SectionButton = ({ title, icon: Icon, isOpen, onClick }) => (
-    <div className="relative">
-      <button
-        onClick={onClick}
-        onMouseEnter={() => setHoveredItem(title)}
-        onMouseLeave={() => setHoveredItem(null)}
-        className="flex items-center justify-between w-full px-3 py-3 rounded-xl transition-all duration-200 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-      >
-        <div className="flex items-center gap-3">
-          <Icon size={22} />
-          {expanded && <span className="font-medium text-base">{title}</span>}
-        </div>
-        {expanded && (
-          <div className={`text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}>
-            <ChevronDown size={18} />
-          </div>
-        )}
-      </button>
-      {/* Tooltip for collapsed mode */}
-      {!expanded && hoveredItem === title && (
-        <div className="fixed left-20 top-1/2 transform -translate-y-1/2 ml-2 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-md whitespace-nowrap z-100 shadow-lg">
-          {title}
-          <div className="absolute left-0 top-1/2 transform -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
+    <button
+      onClick={onClick}
+      className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl transition-all duration-200 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+    >
+      <div className="flex items-center gap-3">
+        <Icon size={18} />
+        {expanded && <span className="font-medium text-sm">{title}</span>}
+      </div>
+      {expanded && (
+        <div className={`text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}>
+          <ChevronDown size={16} />
         </div>
       )}
-    </div>
+    </button>
   );
 
   return (
@@ -171,13 +137,13 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
       {/* HEADER SECTION */}
       <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">
         {expanded && (
-          <img src={logo} className="w-28 object-contain dark:brightness-0 dark:invert" alt="Logo" />
+          <img src={logo} className="w-24 object-contain dark:brightness-0 dark:invert" alt="Logo" />
         )}
         <button
           onClick={() => setExpanded(!expanded)}
           className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
-          {expanded ? <X size={22} className="dark:text-gray-300" /> : <Menu size={22} className="dark:text-gray-300" />}
+          {expanded ? <X size={18} className="dark:text-gray-300" /> : <Menu size={18} className="dark:text-gray-300" />}
         </button>
       </div>
 
@@ -250,30 +216,19 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
 
       {/* DARK MODE TOGGLE ONLY - No Profile Section */}
       <div className="border-t border-gray-100 dark:border-gray-800 p-4">
-        <div className="relative">
-          <button
-            onClick={toggleDarkMode}
-            onMouseEnter={() => setHoveredItem(darkMode ? "Light Mode" : "Dark Mode")}
-            onMouseLeave={() => setHoveredItem(null)}
-            className="w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center"
-          >
-            <div className="flex items-center gap-3">
-              {darkMode ? <Sun size={20} className="text-yellow-500" /> : <Moon size={20} className="text-gray-600 dark:text-gray-400" />}
-              {expanded && (
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {darkMode ? "Light Mode" : "Dark Mode"}
-                </span>
-              )}
-            </div>
-          </button>
-          {/* Tooltip for collapsed mode */}
-          {!expanded && hoveredItem === (darkMode ? "Light Mode" : "Dark Mode") && (
-            <div className="fixed left-20 bottom-24 ml-2 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-md whitespace-nowrap z-100 shadow-lg">
-              {darkMode ? "Light Mode" : "Dark Mode"}
-              <div className="absolute left-0 top-1/2 transform -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
-            </div>
-          )}
-        </div>
+        <button
+          onClick={toggleDarkMode}
+          className="w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-center"
+        >
+          <div className="flex items-center gap-3">
+            {darkMode ? <Sun size={18} className="text-yellow-500" /> : <Moon size={18} className="text-gray-600 dark:text-gray-400" />}
+            {expanded && (
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {darkMode ? "Light Mode" : "Dark Mode"}
+              </span>
+            )}
+          </div>
+        </button>
       </div>
     </div>
   );

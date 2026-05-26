@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { notificationAPI } from '../services/api';
 import socketService from '../services/socket';
 import { toast } from 'react-hot-toast';
@@ -17,7 +17,8 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [lastNotificationId, setLastNotificationId] = useState(null);
+  const notificationIdsRef = useRef(new Set());
+  const pollingIntervalRef = useRef(null);
 
   const getRelativeTime = (timestamp) => {
     if (!timestamp) return 'Just now';
@@ -39,7 +40,7 @@ export const NotificationProvider = ({ children }) => {
   };
 
   const showToastNotification = (notification) => {
-    toast.success(notification.message, {
+    toast.success(notification.message || notification.title, {
       duration: 5000,
       position: 'top-right',
       icon: '🔔',
@@ -49,13 +50,24 @@ export const NotificationProvider = ({ children }) => {
   const loadNotifications = useCallback(async () => {
     try {
       const response = await notificationAPI.getAll();
-      if (response.success) {
-        setNotifications(response.data);
-        const unread = response.data.filter(n => !n.read).length;
-        setUnreadCount(unread);
-        if (response.data.length > 0) {
-          setLastNotificationId(response.data[0].id);
+      if (response.success && Array.isArray(response.data)) {
+        // Deduplicate notifications by ID
+        const uniqueNotifications = [];
+        const seenIds = new Set();
+        
+        for (const notif of response.data) {
+          if (!seenIds.has(notif.id)) {
+            seenIds.add(notif.id);
+            uniqueNotifications.push(notif);
+          }
         }
+        
+        setNotifications(uniqueNotifications);
+        const unread = uniqueNotifications.filter(n => !n.read).length;
+        setUnreadCount(unread);
+        
+        // Update seen IDs
+        uniqueNotifications.forEach(n => notificationIdsRef.current.add(n.id));
       }
     } catch (error) {
       console.error('Error loading notifications:', error);
@@ -75,9 +87,17 @@ export const NotificationProvider = ({ children }) => {
     socketService.onNewNotification((notification) => {
       console.log('🔥 New notification received via socket:', notification);
       
-      // Add to state
+      // Check if notification already exists
+      if (notificationIdsRef.current.has(notification.id)) {
+        console.log('⚠️ Duplicate notification ignored:', notification.id);
+        return;
+      }
+      
+      // Add to set and state
+      notificationIdsRef.current.add(notification.id);
+      
       setNotifications(prev => {
-        // Check if notification already exists
+        // Final check for duplicates in current state
         if (prev.some(n => n.id === notification.id)) {
           return prev;
         }
@@ -103,35 +123,16 @@ export const NotificationProvider = ({ children }) => {
     };
   }, []);
 
-  // Poll as fallback (every 10 seconds)
+  // Clean up polling on unmount
   useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const response = await notificationAPI.getAll();
-        if (response.success && response.data.length > 0) {
-          const latestId = response.data[0].id;
-          if (latestId !== lastNotificationId && lastNotificationId !== null) {
-            // New notification found via polling
-            const newNotifications = response.data.filter(n => n.id !== lastNotificationId);
-            if (newNotifications.length > 0) {
-              setNotifications(response.data);
-              const unread = response.data.filter(n => !n.read).length;
-              setUnreadCount(unread);
-              newNotifications.forEach(showToastNotification);
-            }
-          }
-          setLastNotificationId(latestId);
-        }
-      } catch (error) {
-        console.error('Polling error:', error);
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
       }
-    }, 10000); // Poll every 10 seconds as fallback
-    
-    return () => clearInterval(interval);
-  }, [lastNotificationId]);
+    };
+  }, []);
 
   const addNotification = (notification) => {
-    // This is now handled by the socket
     loadNotifications();
   };
 
@@ -163,6 +164,7 @@ export const NotificationProvider = ({ children }) => {
       await notificationAPI.clearAll();
       setNotifications([]);
       setUnreadCount(0);
+      notificationIdsRef.current.clear();
       toast.success('All notifications cleared');
     } catch (error) {
       console.error('Error clearing notifications:', error);
@@ -173,6 +175,7 @@ export const NotificationProvider = ({ children }) => {
     try {
       await notificationAPI.delete(id);
       setNotifications(prev => prev.filter(n => n.id !== id));
+      notificationIdsRef.current.delete(id);
       const notification = notifications.find(n => n.id === id);
       if (notification && !notification.read) {
         setUnreadCount(prev => Math.max(0, prev - 1));
