@@ -148,6 +148,78 @@ const clearAllNotifications = async (req, res) => {
   }
 };
 
+// ============================================
+// TEST ENDPOINT - Create a test notification for current user
+// ============================================
+const createTestNotification = async (req, res) => {
+  try {
+    const { title, message, type } = req.body;
+    
+    const notification = await createNotification(
+      req.user.id,
+      type || 'test',
+      title || 'Test Notification',
+      message || 'This is a test notification to verify the system is working',
+      null
+    );
+    
+    const io = req.app.get('io');
+    emitNotification(io, req.user.id, notification);
+    
+    res.json({ 
+      success: true, 
+      message: 'Test notification created and sent',
+      data: notification 
+    });
+  } catch (error) {
+    console.error('Create test notification error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// ============================================
+// DEBUG ENDPOINT - Check notification counts
+// ============================================
+const debugNotifications = async (req, res) => {
+  try {
+    // Get count of notifications for current user
+    const userCount = await db.query(
+      `SELECT COUNT(*) as count FROM notifications WHERE user_id = $1`,
+      [req.user.id]
+    );
+    
+    // Get count of admins
+    const adminCount = await db.query(
+      `SELECT COUNT(*) as count FROM users WHERE role = 'admin'`
+    );
+    
+    // Get recent notifications (last 5)
+    const recent = await db.query(
+      `SELECT id, user_id, type, title, created_at, read 
+       FROM notifications 
+       WHERE user_id = $1 
+       ORDER BY created_at DESC 
+       LIMIT 5`,
+      [req.user.id]
+    );
+    
+    res.json({
+      success: true,
+      debug: {
+        userId: req.user.id,
+        userRole: req.user.role,
+        yourNotificationsCount: parseInt(userCount.rows[0].count),
+        totalAdminsCount: parseInt(adminCount.rows[0].count),
+        recentNotifications: recent.rows,
+        message: recent.rows.length === 0 ? 'No notifications found. Try creating a case or use /test endpoint.' : null
+      }
+    });
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
   getNotifications,
   markAsRead,
@@ -156,4 +228,6 @@ module.exports = {
   clearAllNotifications,
   createNotification,
   emitNotification,
+  createTestNotification,
+  debugNotifications,
 };

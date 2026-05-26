@@ -7,12 +7,22 @@ const {
   markAllAsRead,
   deleteNotification,
   clearAllNotifications,
+  createTestNotification,
+  debugNotifications,
 } = require('../controllers/notificationController');
 
-router.get('/', protect, getNotifications);
-router.put('/mark-all-read', protect, markAllAsRead);
-router.put('/:id/read', protect, markAsRead);
-router.delete('/clear-all', protect, clearAllNotifications);
-router.delete('/:id', protect, deleteNotification);
+// All routes require authentication
+router.use(protect);
+
+// Debug routes (use first to check what's happening)
+router.get('/debug', debugNotifications);
+router.post('/test', createTestNotification);
+
+// Main routes
+router.get('/', getNotifications);
+router.put('/mark-all-read', markAllAsRead);
+router.delete('/clear-all', clearAllNotifications);
+router.put('/:id/read', markAsRead);
+router.delete('/:id', deleteNotification);
 
 module.exports = router;
