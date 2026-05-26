@@ -89,7 +89,6 @@ const login = async (req, res) => {
     const token = generateToken(user.id, user.email, user.role);
     
     console.log('Login successful for:', email);
-    console.log('Token generated:', token.substring(0, 50) + '...');
     
     res.json({
       success: true,
@@ -162,6 +161,10 @@ const changePassword = async (req, res) => {
       `SELECT password FROM users WHERE id = $1`,
       [req.user.id]
     );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
     
     const isValid = await bcrypt.compare(currentPassword, result.rows[0].password);
     
