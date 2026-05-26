@@ -7,7 +7,7 @@ const generateResetToken = () => {
   return crypto.randomBytes(32).toString('hex');
 };
 
-// Forgot password - show reset link directly
+// Forgot password - return reset link directly
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -36,12 +36,12 @@ const forgotPassword = async (req, res) => {
     const clientUrl = process.env.CLIENT_URL || 'https://atm-case-management.vercel.app';
     const resetLink = `${clientUrl}/reset-password/${resetToken}`;
     
-    // Return the reset link directly in the response
+    // Return the reset link directly in the response (not email message)
     res.json({ 
       success: true, 
-      message: 'Password reset link generated successfully',
+      message: 'Reset link generated successfully',
       resetLink: resetLink,
-      instruction: 'Click the link below to reset your password'
+      showLink: true
     });
     
   } catch (error) {
