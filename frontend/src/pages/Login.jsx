@@ -41,35 +41,45 @@ const Login = () => {
   };
 
   const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    if (!resetEmail) {
-      toast.error('Please enter your email address');
-      return;
-    }
+  e.preventDefault();
+  if (!resetEmail) {
+    toast.error('Please enter your email address');
+    return;
+  }
+  
+  setResetLoading(true);
+  try {
+    const response = await fetch(`${API_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: resetEmail })
+    });
     
-    setResetLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: resetEmail })
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok && data.success) {
-        setResetSent(true);
-        toast.success('Password reset link sent to your email');
+    const data = await response.json();
+    
+    if (response.ok && data.success) {
+      // Show the reset link directly to the user
+      if (data.resetLink) {
+        // Copy to clipboard button
+        navigator.clipboard.writeText(data.resetLink);
+        toast.success(`Reset link copied to clipboard!`);
+        
+        // Show alert with the link
+        alert(`🔐 Password Reset Link:\n\n${data.resetLink}\n\n✅ Link copied to clipboard!\n\nClick OK to continue.`);
       } else {
-        toast.error(data.message || 'Failed to send reset link');
+        setResetSent(true);
+        toast.success('Password reset link generated');
       }
-    } catch (error) {
-      console.error('Forgot password error:', error);
-      toast.error('Unable to process request. Please try again.');
-    } finally {
-      setResetLoading(false);
+    } else {
+      toast.error(data.message || 'Failed to generate reset link');
     }
-  };
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    toast.error('Unable to process request. Please try again.');
+  } finally {
+    setResetLoading(false);
+  }
+};
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-300

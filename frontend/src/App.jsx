@@ -17,6 +17,7 @@ import { NotificationProvider } from "./context/NotificationContext";
 import MyAssignedCases from './pages/technician/MyAssignedCases';
 import MySchedule from './pages/technician/MySchedule';
 import CompletedCases from './pages/technician/CompletedCases';
+import ResetPassword from './pages/ResetPassword';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -35,7 +36,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Login />} />
               <Route path="/login" element={<Login />} />
-              
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
               <Route element={
                 <ProtectedRoute>
                   <DashboardLayout />

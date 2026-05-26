@@ -8,13 +8,14 @@ const {
   updateProfile,
   changePassword
 } = require('../controllers/authController');
-const { forgotPassword, resetPassword } = require('../controllers/passwordController');
+const { forgotPassword, resetPassword, verifyResetToken } = require('../controllers/passwordController');
 
 // Public routes
 router.post('/register', register);
 router.post('/login', login);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+router.get('/verify-reset-token/:token', verifyResetToken);
 
 // Protected routes
 router.get('/profile', protect, getProfile);

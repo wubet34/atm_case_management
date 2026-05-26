@@ -7,16 +7,22 @@ const generateResetToken = () => {
   return crypto.randomBytes(32).toString('hex');
 };
 
-// Forgot password - send reset link
+// Forgot password - show reset link directly
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     
-    const user = await db.query(`SELECT id, email FROM users WHERE email = $1`, [email]);
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+    
+    const user = await db.query(`SELECT id, email, name FROM users WHERE email = $1`, [email]);
     
     if (user.rows.length === 0) {
-      // For security, still return success even if email not found
-      return res.json({ success: true, message: 'If your email exists, you will receive a reset link' });
+      return res.json({ 
+        success: true, 
+        message: 'User not found. Please check your email.' 
+      });
     }
     
     const resetToken = generateResetToken();
@@ -27,16 +33,17 @@ const forgotPassword = async (req, res) => {
       [resetToken, resetExpires, user.rows[0].id]
     );
     
-    // In production, send email here
-    // For now, log the reset link
-    const resetLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
-    console.log('Reset link:', resetLink);
+    const clientUrl = process.env.CLIENT_URL || 'https://atm-case-management.vercel.app';
+    const resetLink = `${clientUrl}/reset-password/${resetToken}`;
     
+    // Return the reset link directly in the response
     res.json({ 
       success: true, 
-      message: 'Password reset link has been sent to your email',
-      resetLink // Remove in production
+      message: 'Password reset link generated successfully',
+      resetLink: resetLink,
+      instruction: 'Click the link below to reset your password'
     });
+    
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -47,6 +54,14 @@ const forgotPassword = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
+    
+    if (!token || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Token and new password are required' });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
     
     const user = await db.query(
       `SELECT id, email FROM users WHERE reset_token = $1 AND reset_expires > NOW()`,
@@ -64,11 +79,32 @@ const resetPassword = async (req, res) => {
       [hashedPassword, user.rows[0].id]
     );
     
-    res.json({ success: true, message: 'Password reset successfully' });
+    res.json({ success: true, message: 'Password reset successfully. You can now login with your new password.' });
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-module.exports = { forgotPassword, resetPassword };
+// Verify reset token
+const verifyResetToken = async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    const user = await db.query(
+      `SELECT id, email FROM users WHERE reset_token = $1 AND reset_expires > NOW()`,
+      [token]
+    );
+    
+    if (user.rows.length === 0) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
+    }
+    
+    res.json({ success: true, message: 'Token is valid' });
+  } catch (error) {
+    console.error('Verify token error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { forgotPassword, resetPassword, verifyResetToken };
