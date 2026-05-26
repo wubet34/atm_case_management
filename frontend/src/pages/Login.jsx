@@ -247,7 +247,7 @@ const Login = () => {
             <p className={`text-xs transition-colors duration-300
               ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
             >
-              © 2024 ATM Case Management System. All rights reserved.
+              © 2026 ATM Case Management System. All rights reserved.
             </p>
           </div>
         </div>

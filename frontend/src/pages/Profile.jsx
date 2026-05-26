@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   User, Mail, Phone, MapPin, Calendar, Shield, Edit, Save, X, 
-  Camera, CheckCircle, Briefcase, Activity
+  Camera, CheckCircle, Briefcase, Activity, Lock
 } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 import { useDarkMode } from '../context/DarkModeContext';
@@ -10,10 +10,16 @@ import { useCases } from '../context/CaseContext';
 
 const Profile = () => {
   const { darkMode } = useDarkMode();
-  const { user, updateProfile, loading: authLoading } = useAuth();
+  const { user, updateProfile, changePassword, loading: authLoading } = useAuth();
   const { cases, loading: casesLoading } = useCases();
   const [isEditing, setIsEditing] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
   
   const [profileData, setProfileData] = useState({
     name: '',
@@ -32,7 +38,10 @@ const Profile = () => {
     pendingCases: 0
   });
 
-  // Helper to get field values (handles both camelCase and snake_case)
+  const isAdmin = user?.role === 'admin';
+  const isTechnician = user?.role === 'technician';
+
+  // Helper to get field values
   const getField = (obj, field) => {
     if (!obj) return '';
     const camelCase = field;
@@ -110,7 +119,6 @@ const Profile = () => {
       if (result.success) {
         toast.success('Profile updated successfully');
         setIsEditing(false);
-        // Reload profile data
         loadProfile();
       } else {
         toast.error(result.message || 'Failed to update profile');
@@ -118,6 +126,50 @@ const Profile = () => {
     } catch (error) {
       console.error('Error saving profile:', error);
       toast.error(error.message || 'Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (!passwordData.currentPassword) {
+      toast.error('Current password is required');
+      return;
+    }
+    if (!passwordData.newPassword) {
+      toast.error('New password is required');
+      return;
+    }
+    if (passwordData.newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters');
+      return;
+    }
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const result = await changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+      
+      if (result.success) {
+        toast.success('Password changed successfully');
+        setShowPasswordModal(false);
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+      } else {
+        toast.error(result.message || 'Failed to change password');
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast.error(error.message || 'Failed to change password');
     } finally {
       setSaving(false);
     }
@@ -170,11 +222,6 @@ const Profile = () => {
                   <div className="w-24 h-24 rounded-full bg-linear-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-3xl shadow-lg border-4 border-white dark:border-gray-800">
                     {profileData.name?.charAt(0) || 'U'}
                   </div>
-                  {isEditing && (
-                    <button className="absolute bottom-0 right-0 p-1.5 bg-orange-500 rounded-full text-white hover:bg-orange-600 transition-colors">
-                      <Camera size={14} />
-                    </button>
-                  )}
                 </div>
               </div>
               
@@ -200,28 +247,30 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Stats Section */}
-            <div className="border-t border-gray-100 dark:border-gray-700 p-6">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Statistics</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Total Cases</span>
-                  <span className="text-lg font-bold text-gray-900 dark:text-white">{stats.totalCases}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Completed</span>
-                  <span className="text-lg font-bold text-green-600">{stats.completedCases}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">In Progress</span>
-                  <span className="text-lg font-bold text-purple-600">{stats.ongoingCases}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Pending</span>
-                  <span className="text-lg font-bold text-yellow-600">{stats.pendingCases}</span>
+            {/* Stats Section - Only for admins */}
+            {isAdmin && (
+              <div className="border-t border-gray-100 dark:border-gray-700 p-6">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Statistics</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Total Cases</span>
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">{stats.totalCases}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Completed</span>
+                    <span className="text-lg font-bold text-green-600">{stats.completedCases}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">In Progress</span>
+                    <span className="text-lg font-bold text-purple-600">{stats.ongoingCases}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Pending</span>
+                    <span className="text-lg font-bold text-yellow-600">{stats.pendingCases}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -230,41 +279,55 @@ const Profile = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
             <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Personal Information</h2>
-              {!isEditing ? (
+              <div className="flex gap-2">
+                {/* Password Change Button - Available for both roles */}
                 <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center gap-2 transition-colors"
+                  onClick={() => setShowPasswordModal(true)}
+                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-2 transition-colors"
                 >
-                  <Edit size={16} />
-                  Edit Profile
+                  <Lock size={16} />
+                  Change Password
                 </button>
-              ) : (
-                <div className="flex gap-2">
+                
+                {/* Edit Profile Button - Available for both roles */}
+                {!isEditing && (
                   <button
-                    onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg flex items-center gap-2 transition-colors"
+                    onClick={() => setIsEditing(true)}
+                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center gap-2 transition-colors"
                   >
-                    <X size={16} />
-                    Cancel
+                    <Edit size={16} />
+                    Edit Profile
                   </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50"
-                  >
-                    {saving ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    ) : (
-                      <Save size={16} />
-                    )}
-                    Save Changes
-                  </button>
-                </div>
-              )}
+                )}
+                
+                {isEditing && (
+                  <>
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg flex items-center gap-2 transition-colors"
+                    >
+                      <X size={16} />
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50"
+                    >
+                      {saving ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      ) : (
+                        <Save size={16} />
+                      )}
+                      Save Changes
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="p-6 space-y-5">
-              {/* Full Name */}
+              {/* Full Name - Editable for both */}
               <div className="flex flex-col sm:flex-row sm:items-center py-2 border-b border-gray-100 dark:border-gray-700">
                 <div className="sm:w-1/3">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
@@ -287,7 +350,7 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Email - Read Only */}
+              {/* Email - Read Only for both */}
               <div className="flex flex-col sm:flex-row sm:items-center py-2 border-b border-gray-100 dark:border-gray-700">
                 <div className="sm:w-1/3">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
@@ -300,7 +363,7 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Phone Number */}
+              {/* Phone Number - Editable for both */}
               <div className="flex flex-col sm:flex-row sm:items-center py-2 border-b border-gray-100 dark:border-gray-700">
                 <div className="sm:w-1/3">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
@@ -323,30 +386,32 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* District */}
-              <div className="flex flex-col sm:flex-row sm:items-center py-2 border-b border-gray-100 dark:border-gray-700">
-                <div className="sm:w-1/3">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                    <MapPin size={16} />
-                    District
-                  </label>
+              {/* District - Only for admins */}
+              {isAdmin && (
+                <div className="flex flex-col sm:flex-row sm:items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                  <div className="sm:w-1/3">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <MapPin size={16} />
+                      District
+                    </label>
+                  </div>
+                  <div className="sm:w-2/3 mt-1 sm:mt-0">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={profileData.district === 'Not specified' ? '' : profileData.district}
+                        onChange={(e) => setProfileData({...profileData, district: e.target.value || 'Not specified'})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="Enter your district"
+                      />
+                    ) : (
+                      <p className="text-gray-900 dark:text-white">{profileData.district}</p>
+                    )}
+                  </div>
                 </div>
-                <div className="sm:w-2/3 mt-1 sm:mt-0">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={profileData.district === 'Not specified' ? '' : profileData.district}
-                      onChange={(e) => setProfileData({...profileData, district: e.target.value || 'Not specified'})}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      placeholder="Enter your district"
-                    />
-                  ) : (
-                    <p className="text-gray-900 dark:text-white">{profileData.district}</p>
-                  )}
-                </div>
-              </div>
+              )}
 
-              {/* Role - Read Only */}
+              {/* Role - Read Only for both */}
               <div className="flex flex-col sm:flex-row sm:items-center py-2 border-b border-gray-100 dark:border-gray-700">
                 <div className="sm:w-1/3">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
@@ -359,7 +424,7 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Join Date - Read Only */}
+              {/* Join Date - Read Only for both */}
               <div className="flex flex-col sm:flex-row sm:items-center py-2">
                 <div className="sm:w-1/3">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
@@ -374,29 +439,107 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Activity Section */}
-          <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Activity size={20} className="text-orange-500" />
-              Account Activity
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm py-2 border-b border-gray-100 dark:border-gray-700">
-                <span className="text-gray-600 dark:text-gray-400">Last login</span>
-                <span className="text-gray-900 dark:text-white">{new Date().toLocaleString()}</span>
+          {/* Activity Section - Only for admins */}
+          {isAdmin && (
+            <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <Activity size={20} className="text-orange-500" />
+                Account Activity
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm py-2 border-b border-gray-100 dark:border-gray-700">
+                  <span className="text-gray-600 dark:text-gray-400">Last login</span>
+                  <span className="text-gray-900 dark:text-white">{new Date().toLocaleString()}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm py-2 border-b border-gray-100 dark:border-gray-700">
+                  <span className="text-gray-600 dark:text-gray-400">Account status</span>
+                  <span className="text-green-600 flex items-center gap-1"><CheckCircle size={14} /> Active</span>
+                </div>
+                <div className="flex items-center justify-between text-sm py-2">
+                  <span className="text-gray-600 dark:text-gray-400">Cases completed</span>
+                  <span className="text-gray-900 dark:text-white font-semibold">{stats.completedCases} / {stats.totalCases}</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between text-sm py-2 border-b border-gray-100 dark:border-gray-700">
-                <span className="text-gray-600 dark:text-gray-400">Account status</span>
-                <span className="text-green-600 flex items-center gap-1"><CheckCircle size={14} /> Active</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Password Change Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className={`max-w-md w-full rounded-xl shadow-xl overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className={`flex justify-between items-center p-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Change Password</h2>
+              <button onClick={() => setShowPasswordModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Enter current password"
+                />
               </div>
-              <div className="flex items-center justify-between text-sm py-2">
-                <span className="text-gray-600 dark:text-gray-400">Cases completed</span>
-                <span className="text-gray-900 dark:text-white font-semibold">{stats.completedCases} / {stats.totalCases}</span>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Enter new password (min 6 characters)"
+                />
               </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Confirm new password"
+                />
+              </div>
+            </div>
+            
+            <div className={`flex justify-end gap-3 p-6 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePasswordChange}
+                disabled={saving}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center gap-2 disabled:opacity-50"
+              >
+                {saving ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <Lock size={16} />
+                )}
+                Change Password
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -19,7 +19,6 @@ const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
-  const [processedIds, setProcessedIds] = useState(new Set());
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -90,100 +89,139 @@ const NotificationBell = () => {
       >
         <Bell size={20} className="text-gray-600 dark:text-gray-400" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1 animate-pulse">
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 animate-pulse">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-[calc(100vw-2rem)] sm:max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden">
-          {/* Header */}
-          <div className="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
-            <div className="flex gap-2">
-              {notifications.length > 0 && (
-                <>
-                  <button
-                    onClick={handleMarkAllAsRead}
-                    className="p-1.5 text-gray-500 hover:text-orange-500 transition-colors"
-                    title="Mark all as read"
-                  >
-                    <CheckCheck size={16} />
-                  </button>
-                  <button
-                    onClick={handleClearAll}
-                    className="p-1.5 text-gray-500 hover:text-red-500 transition-colors"
-                    title="Clear all notifications"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </>
-              )}
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* Notifications List - Fixed mobile overflow */}
-          <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <Bell size={40} className="mx-auto mb-2 opacity-50" />
-                <p>No notifications</p>
-              </div>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`group p-3 sm:p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer ${
-                    !notification.read ? 'bg-orange-50/30 dark:bg-orange-900/10' : ''
-                  }`}
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  <div className="flex gap-2 sm:gap-3">
-                    <div className="flex-shrink-0 mt-0.5">
-                      {getNotificationIcon(notification.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs sm:text-sm text-gray-900 dark:text-white break-words">
-                        {notification.message || notification.title}
-                      </p>
-                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
-                        <Clock size={10} />
-                        {getRelativeTime(notification.created_at || notification.timestamp)}
-                      </p>
-                    </div>
+        <>
+          {/* Backdrop for mobile */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            onClick={() => setIsOpen(false)}
+          />
+          
+          {/* Dropdown */}
+          <div className="fixed bottom-0 left-0 right-0 lg:absolute lg:bottom-auto lg:left-auto lg:right-0 lg:top-full lg:mt-2 
+                         bg-white dark:bg-gray-800 rounded-t-xl lg:rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 
+                         z-50 overflow-hidden
+                         lg:w-96 w-full max-h-[80vh] lg:max-h-96
+                         animate-slide-up lg:animate-none">
+            {/* Header */}
+            <div className="flex justify-between items-center p-4 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+              <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
+              <div className="flex gap-2">
+                {notifications.length > 0 && (
+                  <>
                     <button
-                      onClick={(e) => handleDeleteNotification(e, notification.id)}
-                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity flex-shrink-0"
-                      aria-label="Delete notification"
+                      onClick={handleMarkAllAsRead}
+                      className="p-1.5 text-gray-500 hover:text-orange-500 transition-colors"
+                      title="Mark all as read"
                     >
-                      <X size={14} />
+                      <CheckCheck size={16} />
                     </button>
-                  </div>
+                    <button
+                      onClick={handleClearAll}
+                      className="p-1.5 text-gray-500 hover:text-red-500 transition-colors"
+                      title="Clear all notifications"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors lg:hidden"
+                >
+                  <X size={20} />
+                </button>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors hidden lg:block"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Notifications List */}
+            <div className="overflow-y-auto max-h-[60vh] lg:max-h-96">
+              {notifications.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <Bell size={40} className="mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No notifications</p>
                 </div>
-              ))
+              ) : (
+                notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`group p-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer ${
+                      !notification.read ? 'bg-orange-50/30 dark:bg-orange-900/10' : ''
+                    }`}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 mt-0.5">
+                        {getNotificationIcon(notification.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-900 dark:text-white break-words">
+                          {notification.message || notification.title}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
+                          <Clock size={10} className="flex-shrink-0" />
+                          <span>{getRelativeTime(notification.created_at || notification.timestamp)}</span>
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => handleDeleteNotification(e, notification.id)}
+                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity flex-shrink-0"
+                        aria-label="Delete notification"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer */}
+            {notifications.length > 0 && (
+              <div className="p-2 text-center border-t border-gray-100 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800">
+                <button
+                  onClick={handleMarkAllAsRead}
+                  className="text-xs text-orange-600 dark:text-orange-400 hover:underline"
+                >
+                  Mark all as read
+                </button>
+              </div>
             )}
           </div>
-
-          {/* Footer */}
-          {notifications.length > 0 && (
-            <div className="p-2 text-center border-t border-gray-100 dark:border-gray-700">
-              <button
-                onClick={handleMarkAllAsRead}
-                className="text-xs text-orange-600 dark:text-orange-400 hover:underline"
-              >
-                Mark all as read
-              </button>
-            </div>
-          )}
-        </div>
+        </>
       )}
+
+      {/* Add animation CSS */}
+      <style jsx>{`
+        @keyframes slideUp {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-up {
+          animation: slideUp 0.3s ease-out;
+        }
+        @media (min-width: 1024px) {
+          .animate-slide-up {
+            animation: none;
+          }
+        }
+      `}</style>
     </div>
   );
 };
