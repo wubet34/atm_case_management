@@ -5,6 +5,7 @@ import { useDarkMode } from '../context/DarkModeContext';
 import { Shield, User, Lock, Sun, Moon, AlertCircle, Fingerprint, ArrowRight, WifiOff } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 import logo from '../assets/logo.png';
+import { API_URL } from '../config';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -225,7 +226,7 @@ const Login = () => {
               type="button"
               onClick={async () => {
                 try {
-                  const response = await fetch('http://localhost:5000/api/health');
+                 const response = await fetch(`${API_URL}/health`);
                   if (response.ok) {
                     toast.success('Server is running');
                   }

@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api';
+import { API_URL } from '../config';
 
 const getToken = () => localStorage.getItem('token');
 
@@ -33,7 +33,7 @@ const apiCall = async (endpoint, method = 'GET', data = null) => {
   } catch (error) {
     console.error('API Error:', error);
     if (error.message === 'Failed to fetch') {
-      throw new Error('Cannot connect to server. Please make sure the backend is running on port 5000');
+      throw new Error('Cannot connect to server. Please make sure the backend is running');
     }
     throw error;
   }
@@ -65,7 +65,7 @@ export const caseAPI = {
 export const technicianAPI = {
   getAll: () => apiCall('/technicians'),
   getById: (id) => apiCall(`/technicians/${id}`),
-  create: (data) => apiCall('/technicians', 'POST', data),  // Make sure this exists
+  create: (data) => apiCall('/technicians', 'POST', data),
   update: (id, data) => apiCall(`/technicians/${id}`, 'PUT', data),
   delete: (id) => apiCall(`/technicians/${id}`, 'DELETE'),
 };
