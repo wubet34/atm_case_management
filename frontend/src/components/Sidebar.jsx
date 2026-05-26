@@ -92,14 +92,15 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
       to={to}
       onClick={handleLinkClick}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2.5 rounded-xl
+        `flex items-center rounded-xl
         ${isActive 
           ? "bg-linear-to-r from-orange-500 to-orange-600 text-white shadow-md" 
-          : `text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 ${expanded ? "justify-start" : "justify-center"}`
-        }`
+          : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+        }
+        ${expanded ? "px-3 py-2.5 gap-3 justify-start" : "p-2.5 justify-center w-full"}`
       }
     >
-      <Icon size={18} />
+      <Icon size={18} className="flex-shrink-0" />
       {expanded && <span className="font-medium text-sm">{label}</span>}
     </NavLink>
   );
@@ -116,18 +117,19 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
         }`
       }
     >
-      {Icon ? <Icon size={14} className="text-orange-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />}
-      {expanded && <span>{label}</span>}
+      {Icon ? <Icon size={14} className="text-orange-500 flex-shrink-0" /> : <div className="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />}
+      <span>{label}</span>
     </NavLink>
   );
 
   const SectionButton = ({ title, icon: Icon, isOpen, onClick }) => (
     <button
       onClick={onClick}
-      className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+      className={`flex items-center rounded-xl text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800
+        ${expanded ? "px-3 py-2.5 gap-3 justify-between w-full" : "p-2.5 justify-center w-full"}`}
     >
-      <div className="flex items-center gap-3">
-        <Icon size={18} />
+      <div className={`flex items-center gap-3 ${!expanded && "justify-center w-full"}`}>
+        <Icon size={18} className="flex-shrink-0" />
         {expanded && <span className="font-medium text-sm">{title}</span>}
       </div>
       {expanded && (
@@ -168,7 +170,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
       <div
         ref={sidebarRef}
         className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-900 shadow-lg flex flex-col z-50
-        ${expanded ? "w-72" : "w-20"}
+        ${expanded ? "w-72" : "w-16"}
         dark:border-r dark:border-gray-800
         ${isMobile && expanded ? "shadow-2xl" : ""}`}
       >
@@ -256,10 +258,11 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
         <div className="border-t border-gray-100 dark:border-gray-800 p-3">
           <button
             onClick={toggleDarkMode}
-            className={`w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center ${expanded ? "justify-start" : "justify-center"}`}
+            className={`w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center
+              ${expanded ? "justify-start" : "justify-center"}`}
           >
             <div className={`flex items-center gap-3 ${!expanded && "justify-center"}`}>
-              {darkMode ? <Sun size={18} className="text-yellow-500" /> : <Moon size={18} className="text-gray-600 dark:text-gray-400" />}
+              {darkMode ? <Sun size={18} className="text-yellow-500 flex-shrink-0" /> : <Moon size={18} className="text-gray-600 dark:text-gray-400 flex-shrink-0" />}
               {expanded && (
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {darkMode ? "Light Mode" : "Dark Mode"}
