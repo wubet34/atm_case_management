@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useDarkMode } from '../context/DarkModeContext';
-import { Shield, User, Lock, Sun, Moon, AlertCircle, Fingerprint, ArrowRight, WifiOff, Mail, Send } from 'lucide-react';
+import { Shield, User, Lock, Sun, Moon, AlertCircle, Fingerprint, ArrowRight, WifiOff, Mail, Send, Copy, ExternalLink } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 import logo from '../assets/logo.png';
 import { API_URL } from '../config';
@@ -17,6 +17,8 @@ const Login = () => {
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [showResetLinkModal, setShowResetLinkModal] = useState(false);
+  const [generatedResetLink, setGeneratedResetLink] = useState('');
   const { login } = useAuth();
   const { darkMode, toggleDarkMode } = useDarkMode();
   const navigate = useNavigate();
@@ -41,45 +43,54 @@ const Login = () => {
   };
 
   const handleForgotPassword = async (e) => {
-  e.preventDefault();
-  if (!resetEmail) {
-    toast.error('Please enter your email address');
-    return;
-  }
-  
-  setResetLoading(true);
-  try {
-    const response = await fetch(`${API_URL}/auth/forgot-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: resetEmail })
-    });
-    
-    const data = await response.json();
-    
-    if (response.ok && data.success) {
-      // Show the reset link directly to the user
-      if (data.resetLink) {
-        // Copy to clipboard button
-        navigator.clipboard.writeText(data.resetLink);
-        toast.success(`Reset link copied to clipboard!`);
-        
-        // Show alert with the link
-        alert(`🔐 Password Reset Link:\n\n${data.resetLink}\n\n✅ Link copied to clipboard!\n\nClick OK to continue.`);
-      } else {
-        setResetSent(true);
-        toast.success('Password reset link generated');
-      }
-    } else {
-      toast.error(data.message || 'Failed to generate reset link');
+    e.preventDefault();
+    if (!resetEmail) {
+      toast.error('Please enter your email address');
+      return;
     }
-  } catch (error) {
-    console.error('Forgot password error:', error);
-    toast.error('Unable to process request. Please try again.');
-  } finally {
-    setResetLoading(false);
-  }
-};
+    
+    setResetLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        if (data.resetLink) {
+          setGeneratedResetLink(data.resetLink);
+          setShowResetLinkModal(true);
+          setResetSent(true);
+        } else {
+          setResetSent(true);
+          toast.success('Password reset link generated');
+        }
+      } else {
+        toast.error(data.message || 'Failed to generate reset link');
+      }
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      toast.error('Unable to process request. Please try again.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(generatedResetLink);
+    toast.success('Reset link copied to clipboard!');
+  };
+
+  const openResetLink = () => {
+    window.open(generatedResetLink, '_blank');
+    setShowResetLinkModal(false);
+    setShowForgotPassword(false);
+    setResetSent(false);
+    setResetEmail('');
+  };
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-300
@@ -274,29 +285,11 @@ const Login = () => {
                   Reset Password
                 </h2>
                 <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Enter your email address and we'll send you a link to reset your password.
+                  Enter your email address to reset your password.
                 </p>
               </div>
 
-              {resetSent ? (
-                <div className={`p-4 rounded-lg text-center ${darkMode ? 'bg-green-900/20 border border-green-500/50' : 'bg-green-50 border border-green-200'}`}>
-                  <p className={`text-sm ${darkMode ? 'text-green-300' : 'text-green-700'}`}>
-                    Password reset link has been sent to your email address.
-                    Please check your inbox.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForgotPassword(false);
-                      setResetSent(false);
-                      setResetEmail('');
-                    }}
-                    className={`mt-4 text-sm font-medium hover:underline ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}
-                  >
-                    Back to Login
-                  </button>
-                </div>
-              ) : (
+              {!resetSent ? (
                 <>
                   <div>
                     <label className={`block text-sm font-medium mb-2 transition-colors duration-300
@@ -349,12 +342,32 @@ const Login = () => {
                       ) : (
                         <>
                           <Send size={16} />
-                          Send Reset Link
+                          Reset Password
                         </>
                       )}
                     </button>
                   </div>
                 </>
+              ) : (
+                <div className={`p-4 rounded-lg text-center ${darkMode ? 'bg-green-900/20 border border-green-500/50' : 'bg-green-50 border border-green-200'}`}>
+                  <p className={`text-sm ${darkMode ? 'text-green-300' : 'text-green-700'}`}>
+                    Password reset link has been generated.
+                    {!showResetLinkModal && " Please check your email or click the button below."}
+                  </p>
+                  {!showResetLinkModal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotPassword(false);
+                        setResetSent(false);
+                        setResetEmail('');
+                      }}
+                      className={`mt-4 text-sm font-medium hover:underline ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}
+                    >
+                      Back to Login
+                    </button>
+                  )}
+                </div>
               )}
             </form>
           )}
@@ -370,7 +383,7 @@ const Login = () => {
                     toast.success('Server is running');
                   }
                 } catch (error) {
-                  toast.error('Server is not running. Please start the backend server.');
+                  toast.error('Server is not running');
                 }
               }}
               className="text-xs text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400 underline"
@@ -379,7 +392,7 @@ const Login = () => {
             </button>
           </div>
 
-          {/* Footer with Developed by Wubet */}
+          {/* Footer */}
           <div className="mt-6 pt-6 text-center border-t transition-colors duration-300
             ${darkMode ? 'border-gray-800' : 'border-gray-100'}"
           >
@@ -396,6 +409,58 @@ const Login = () => {
           </div>
         </div>
       </div>
+
+      {/* Reset Link Modal */}
+      {showResetLinkModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className={`max-w-md w-full rounded-xl shadow-xl overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className={`p-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Password Reset Link</h2>
+            </div>
+            
+            <div className="p-6">
+              <p className={`text-sm mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                Click the button below to reset your password:
+              </p>
+              
+              <div className={`p-3 rounded-lg mb-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <p className="text-xs break-all font-mono">{generatedResetLink}</p>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={copyToClipboard}
+                  className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center justify-center gap-2"
+                >
+                  <Copy size={16} />
+                  Copy Link
+                </button>
+                <button
+                  onClick={openResetLink}
+                  className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center justify-center gap-2"
+                >
+                  <ExternalLink size={16} />
+                  Open Reset Page
+                </button>
+              </div>
+            </div>
+            
+            <div className={`flex justify-end p-6 border-t ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+              <button
+                onClick={() => {
+                  setShowResetLinkModal(false);
+                  setShowForgotPassword(false);
+                  setResetSent(false);
+                  setResetEmail('');
+                }}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
