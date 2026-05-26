@@ -29,6 +29,7 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
 
   const [openATM, setOpenATM] = useState(false);
   const [openTechnician, setOpenTechnician] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   
   const { darkMode, toggleDarkMode } = useDarkMode();
   const { user } = useAuth();
@@ -38,15 +39,18 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
     return savedUser ? JSON.parse(savedUser) : { name: "Wubet Tesfaye", role: "admin", email: "admin@example.com" };
   });
 
+  const sidebarRef = useRef();
   const atmRef = useRef();
   const technicianRef = useRef();
 
   const isAdmin = user?.role === 'admin' || userData?.role === 'admin';
   const isTechnician = user?.role === 'technician' || userData?.role === 'technician';
 
-  // Handle window resize - auto collapse on mobile, expand on desktop
+  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
       const isDesktop = window.innerWidth >= 1024;
       if (!isDesktop && expanded) {
         setExpanded(false);
@@ -64,6 +68,19 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
     return () => window.removeEventListener("resize", handleResize);
   }, [expanded, setExpanded]);
 
+  // Close sidebar when clicking outside on mobile
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMobile && expanded && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        setExpanded(false);
+        localStorage.setItem("sidebar", JSON.stringify(false));
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMobile, expanded, setExpanded]);
+
   useEffect(() => {
     localStorage.setItem("sidebar", JSON.stringify(expanded));
     window.dispatchEvent(new CustomEvent('sidebarToggle', { detail: { expanded } }));
@@ -76,9 +93,8 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
     }
   }, [expanded]);
 
-  const isMobile = () => window.innerWidth < 768;
   const handleLinkClick = () => {
-    if (isMobile()) setExpanded(false);
+    if (isMobile) setExpanded(false);
   };
 
   const NavItem = ({ to, icon: Icon, label }) => (
@@ -133,110 +149,126 @@ function Sidebar({ expanded: externalExpanded, setExpanded: externalSetExpanded 
   );
 
   return (
-    <div
-      className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-900 shadow-lg flex flex-col transition-all duration-300 ease-in-out z-40
-      ${expanded ? "w-72" : "w-16"}
-      dark:border-r dark:border-gray-800`}
-    >
-      {/* HEADER SECTION - Only menu icon on mobile when collapsed */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
-        {expanded && (
-          <img src={logo} className="w-24 object-contain dark:brightness-0 dark:invert" alt="Logo" />
-        )}
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${!expanded ? "mx-auto" : ""}`}
-        >
-          {expanded ? <X size={18} className="dark:text-gray-300" /> : <Menu size={18} className="dark:text-gray-300" />}
-        </button>
-      </div>
-
-      {/* MAIN NAVIGATION - Hidden when collapsed */}
-      {expanded && (
-        <div className="flex-1 overflow-y-auto">
-          <nav className="flex flex-col gap-1 p-2">
-            <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-            <NavItem to="/cases" icon={FileText} label="Case Tracking" />
-
-            {/* TECHNICIAN SECTION */}
-            {isTechnician && (
-              <div ref={technicianRef}>
-                <SectionButton 
-                  title="Technician" 
-                  icon={Wrench} 
-                  isOpen={openTechnician}
-                  onClick={() => {
-                    if (!expanded) {
-                      setExpanded(true);
-                      setTimeout(() => setOpenTechnician(true), 200);
-                    } else {
-                      setOpenTechnician(!openTechnician);
-                    }
-                  }}
-                />
-                {openTechnician && expanded && (
-                  <div className="ml-7 mt-1 flex flex-col gap-1">
-                    <SubItem to="/technician/my-cases" label="My Assigned Cases" icon={FileText} />
-                    <SubItem to="/technician/schedule" label="My Schedule" icon={Calendar} />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ATM CASE SECTION - Admin */}
-            {isAdmin && (
-              <div ref={atmRef}>
-                <SectionButton 
-                  title="ATM Case" 
-                  icon={Shield} 
-                  isOpen={openATM}
-                  onClick={() => {
-                    if (!expanded) {
-                      setExpanded(true);
-                      setTimeout(() => setOpenATM(true), 200);
-                    } else {
-                      setOpenATM(!openATM);
-                    }
-                  }}
-                />
-                {openATM && expanded && (
-                  <div className="ml-7 mt-1 flex flex-col gap-1">
-                    <SubItem to="/atm/manage" label="Manage Case" icon={PlusCircle} />
-                    <SubItem to="/atm/appoint" label="Appoint Technician" icon={UserCheck} />
-                    <SubItem to="/atm/terminate" label="Terminate Case" icon={XCircle} />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* TECHNICIANS - Admin only */}
-            {isAdmin && (
-              <NavItem to="/technicians" icon={Users} label="Technicians" />
-            )}
-
-            {/* REPORTS */}
-            <NavItem to="/reports" icon={ClipboardList} label="Reports" />
-          </nav>
-        </div>
+    <>
+      {/* Overlay for mobile when sidebar is expanded */}
+      {isMobile && expanded && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity duration-300"
+          onClick={() => {
+            setExpanded(false);
+            localStorage.setItem("sidebar", JSON.stringify(false));
+          }}
+        />
       )}
-
-      {/* DARK MODE TOGGLE - Only visible when expanded */}
-      {expanded && (
-        <div className="border-t border-gray-100 dark:border-gray-800 p-3">
+      
+      {/* Sidebar */}
+      <div
+        ref={sidebarRef}
+        className={`fixed top-0 left-0 h-screen bg-white dark:bg-gray-900 shadow-lg flex flex-col transition-all duration-300 ease-in-out z-40
+        ${expanded ? "w-72" : "w-16"}
+        dark:border-r dark:border-gray-800
+        ${isMobile && expanded ? "shadow-2xl" : ""}`}
+      >
+        {/* HEADER SECTION - Only menu icon on mobile when collapsed */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
+          {expanded && (
+            <img src={logo} className="w-24 object-contain dark:brightness-0 dark:invert" alt="Logo" />
+          )}
           <button
-            onClick={toggleDarkMode}
-            className="w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-start"
+            onClick={() => setExpanded(!expanded)}
+            className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${!expanded ? "mx-auto" : ""}`}
           >
-            <div className="flex items-center gap-3">
-              {darkMode ? <Sun size={18} className="text-yellow-500" /> : <Moon size={18} className="text-gray-600 dark:text-gray-400" />}
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {darkMode ? "Light Mode" : "Dark Mode"}
-              </span>
-            </div>
+            {expanded ? <X size={18} className="dark:text-gray-300" /> : <Menu size={18} className="dark:text-gray-300" />}
           </button>
         </div>
-      )}
-    </div>
+
+        {/* MAIN NAVIGATION - Hidden when collapsed */}
+        {expanded && (
+          <div className="flex-1 overflow-y-auto">
+            <nav className="flex flex-col gap-1 p-2">
+              <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+              <NavItem to="/cases" icon={FileText} label="Case Tracking" />
+
+              {/* TECHNICIAN SECTION */}
+              {isTechnician && (
+                <div ref={technicianRef}>
+                  <SectionButton 
+                    title="Technician" 
+                    icon={Wrench} 
+                    isOpen={openTechnician}
+                    onClick={() => {
+                      if (!expanded) {
+                        setExpanded(true);
+                        setTimeout(() => setOpenTechnician(true), 200);
+                      } else {
+                        setOpenTechnician(!openTechnician);
+                      }
+                    }}
+                  />
+                  {openTechnician && expanded && (
+                    <div className="ml-7 mt-1 flex flex-col gap-1">
+                      <SubItem to="/technician/my-cases" label="My Assigned Cases" icon={FileText} />
+                      <SubItem to="/technician/schedule" label="My Schedule" icon={Calendar} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ATM CASE SECTION - Admin */}
+              {isAdmin && (
+                <div ref={atmRef}>
+                  <SectionButton 
+                    title="ATM Case" 
+                    icon={Shield} 
+                    isOpen={openATM}
+                    onClick={() => {
+                      if (!expanded) {
+                        setExpanded(true);
+                        setTimeout(() => setOpenATM(true), 200);
+                      } else {
+                        setOpenATM(!openATM);
+                      }
+                    }}
+                  />
+                  {openATM && expanded && (
+                    <div className="ml-7 mt-1 flex flex-col gap-1">
+                      <SubItem to="/atm/manage" label="Manage Case" icon={PlusCircle} />
+                      <SubItem to="/atm/appoint" label="Appoint Technician" icon={UserCheck} />
+                      <SubItem to="/atm/terminate" label="Terminate Case" icon={XCircle} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TECHNICIANS - Admin only */}
+              {isAdmin && (
+                <NavItem to="/technicians" icon={Users} label="Technicians" />
+              )}
+
+              {/* REPORTS */}
+              <NavItem to="/reports" icon={ClipboardList} label="Reports" />
+            </nav>
+          </div>
+        )}
+
+        {/* DARK MODE TOGGLE - Only visible when expanded */}
+        {expanded && (
+          <div className="border-t border-gray-100 dark:border-gray-800 p-3">
+            <button
+              onClick={toggleDarkMode}
+              className="w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center justify-start"
+            >
+              <div className="flex items-center gap-3">
+                {darkMode ? <Sun size={18} className="text-yellow-500" /> : <Moon size={18} className="text-gray-600 dark:text-gray-400" />}
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {darkMode ? "Light Mode" : "Dark Mode"}
+                </span>
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
