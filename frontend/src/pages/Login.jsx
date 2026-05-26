@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useDarkMode } from '../context/DarkModeContext';
-import { Shield, User, Lock, Sun, Moon, AlertCircle, Fingerprint, ArrowRight, WifiOff } from 'lucide-react';
+import { Shield, User, Lock, Sun, Moon, AlertCircle, Fingerprint, ArrowRight, WifiOff, Mail, Send } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 import logo from '../assets/logo.png';
 import { API_URL } from '../config';
@@ -13,6 +13,10 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const { login } = useAuth();
   const { darkMode, toggleDarkMode } = useDarkMode();
   const navigate = useNavigate();
@@ -30,11 +34,41 @@ const Login = () => {
         navigate('/dashboard');
       }, 500);
     } else {
-      // Show specific error message
       setError(result.message);
       toast.error(result.message);
     }
     setLoading(false);
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!resetEmail) {
+      toast.error('Please enter your email address');
+      return;
+    }
+    
+    setResetLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        setResetSent(true);
+        toast.success('Password reset link sent to your email');
+      } else {
+        toast.error(data.message || 'Failed to send reset link');
+      }
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      toast.error('Unable to process request. Please try again.');
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   return (
@@ -117,116 +151,211 @@ const Login = () => {
           )}
 
           {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className={`block text-sm font-medium mb-2 transition-colors duration-300
-                ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
-              >
-                Email Address
-              </label>
-              <div className="relative">
-                <User size={18} className={`absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors duration-300
-                  ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
-                />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className={`w-full pl-10 pr-4 py-2.5 rounded-lg transition-all duration-300
-                    ${darkMode 
-                      ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500' 
-                      : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-orange-500'
-                    } border focus:outline-none`}
-                  required
-                />
+          {!showForgotPassword ? (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300
+                  ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                >
+                  Email Address
+                </label>
+                <div className="relative">
+                  <User size={18} className={`absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors duration-300
+                    ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
+                  />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg transition-all duration-300
+                      ${darkMode 
+                        ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500' 
+                        : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-orange-500'
+                      } border focus:outline-none`}
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className={`block text-sm font-medium mb-2 transition-colors duration-300
-                ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
-              >
-                Password
-              </label>
-              <div className="relative">
-                <Lock size={18} className={`absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors duration-300
-                  ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
-                />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className={`w-full pl-10 pr-12 py-2.5 rounded-lg transition-all duration-300
-                    ${darkMode 
-                      ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500' 
-                      : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-orange-500'
-                    } border focus:outline-none`}
-                  required
-                />
+              <div>
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300
+                  ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                >
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock size={18} className={`absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors duration-300
+                    ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
+                  />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className={`w-full pl-10 pr-12 py-2.5 rounded-lg transition-all duration-300
+                      ${darkMode 
+                        ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500' 
+                        : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-orange-500'
+                      } border focus:outline-none`}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-xs transition-colors duration-300
+                      ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className={`w-4 h-4 rounded transition-colors duration-300
+                      ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'}
+                      focus:ring-2 focus:ring-orange-500`}
+                  />
+                  <span className={`text-sm transition-colors duration-300
+                    ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}
+                  >
+                    Remember me
+                  </span>
+                </label>
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-xs transition-colors duration-300
-                    ${darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
+                  onClick={() => setShowForgotPassword(true)}
+                  className={`text-sm transition-colors duration-300 hover:underline
+                    ${darkMode ? 'text-orange-400 hover:text-orange-300' : 'text-orange-600 hover:text-orange-700'}`}
                 >
-                  {showPassword ? 'Hide' : 'Show'}
+                  Forgot password?
                 </button>
               </div>
-            </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className={`w-4 h-4 rounded transition-colors duration-300
-                    ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'}
-                    focus:ring-2 focus:ring-orange-500`}
-                />
-                <span className={`text-sm transition-colors duration-300
-                  ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}
-                >
-                  Remember me
-                </span>
-              </label>
               <button
-                type="button"
-                className={`text-sm transition-colors duration-300 hover:underline
-                  ${darkMode ? 'text-orange-400 hover:text-orange-300' : 'text-orange-600 hover:text-orange-700'}`}
+                type="submit"
+                disabled={loading}
+                className={`w-full py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center gap-2
+                  ${darkMode 
+                    ? 'bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/20' 
+                    : 'bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg'
+                  } text-white disabled:opacity-50 disabled:cursor-not-allowed group`}
               >
-                Forgot password?
+                {loading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  <>
+                    <Fingerprint size={18} />
+                    Sign In
+                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </button>
-            </div>
+            </form>
+          ) : (
+            /* Forgot Password Form */
+            <form onSubmit={handleForgotPassword} className="space-y-6">
+              <div className="text-center mb-4">
+                <Mail size={48} className={`mx-auto mb-3 ${darkMode ? 'text-orange-400' : 'text-orange-500'}`} />
+                <h2 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Reset Password
+                </h2>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Enter your email address and we'll send you a link to reset your password.
+                </p>
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center gap-2
-                ${darkMode 
-                  ? 'bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/20' 
-                  : 'bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg'
-                } text-white disabled:opacity-50 disabled:cursor-not-allowed group`}
-            >
-              {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              {resetSent ? (
+                <div className={`p-4 rounded-lg text-center ${darkMode ? 'bg-green-900/20 border border-green-500/50' : 'bg-green-50 border border-green-200'}`}>
+                  <p className={`text-sm ${darkMode ? 'text-green-300' : 'text-green-700'}`}>
+                    Password reset link has been sent to your email address.
+                    Please check your inbox.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setResetSent(false);
+                      setResetEmail('');
+                    }}
+                    className={`mt-4 text-sm font-medium hover:underline ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}
+                  >
+                    Back to Login
+                  </button>
+                </div>
               ) : (
                 <>
-                  <Fingerprint size={18} />
-                  Sign In
-                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 transition-colors duration-300
+                      ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}
+                    >
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <Mail size={18} className={`absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors duration-300
+                        ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
+                      />
+                      <input
+                        type="email"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        placeholder="Enter your registered email"
+                        className={`w-full pl-10 pr-4 py-2.5 rounded-lg transition-all duration-300
+                          ${darkMode 
+                            ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-orange-500' 
+                            : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-orange-500'
+                          } border focus:outline-none`}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(false)}
+                      className={`flex-1 py-2.5 rounded-lg transition-all duration-300
+                        ${darkMode 
+                          ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                          : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                        }`}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={resetLoading}
+                      className={`flex-1 py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center gap-2
+                        ${darkMode 
+                          ? 'bg-orange-500 hover:bg-orange-600' 
+                          : 'bg-orange-500 hover:bg-orange-600'
+                        } text-white disabled:opacity-50`}
+                    >
+                      {resetLoading ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      ) : (
+                        <>
+                          <Send size={16} />
+                          Send Reset Link
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </>
               )}
-            </button>
-          </form>
+            </form>
+          )}
 
-          {/* Server Status Indicator (only when backend is down) */}
+          {/* Server Status Indicator */}
           <div className="mt-4 text-center">
             <button
               type="button"
               onClick={async () => {
                 try {
-                 const response = await fetch(`${API_URL}/health`);
+                  const response = await fetch(`${API_URL}/health`);
                   if (response.ok) {
                     toast.success('Server is running');
                   }
@@ -240,7 +369,7 @@ const Login = () => {
             </button>
           </div>
 
-          {/* Footer */}
+          {/* Footer with Developed by Wubet */}
           <div className="mt-6 pt-6 text-center border-t transition-colors duration-300
             ${darkMode ? 'border-gray-800' : 'border-gray-100'}"
           >
@@ -248,6 +377,11 @@ const Login = () => {
               ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
             >
               © 2026 ATM Case Management System. All rights reserved.
+            </p>
+            <p className={`text-xs mt-1 transition-colors duration-300
+              ${darkMode ? 'text-gray-600' : 'text-gray-400'}`}
+            >
+              Developed by <span className="text-orange-500 font-medium">Wubet Alebachew</span>
             </p>
           </div>
         </div>
