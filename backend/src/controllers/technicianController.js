@@ -20,24 +20,32 @@ const createTechnician = async (req, res) => {
     
     console.log('Creating technician:', { name, email, phone, district });
     
+    // Validate required fields
     if (!name || !email || !password || !phone || !district) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
     }
     
+    // Check if user already exists
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'Email already exists' });
     }
     
+    // Hash the password - THIS IS CRITICAL
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    
+    // Create technician with hashed password
     const newTechnician = await User.create({
       name,
       email,
-      password,
+      password: hashedPassword,  // Store hashed password, not plain text
       phone,
       district,
       role
     });
     
+    // Log activity
     await db.query(
       `INSERT INTO activity_logs (user_id, action, details) VALUES ($1, $2, $3)`,
       [req.user.id, 'CREATE_TECHNICIAN', JSON.stringify({ technicianName: name, technicianEmail: email })]
@@ -107,10 +115,41 @@ const deleteTechnician = async (req, res) => {
   }
 };
 
+// Add this function to reset technician password
+const resetTechnicianPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+    
+    const technician = await User.findById(id);
+    if (!technician || technician.role !== 'technician') {
+      return res.status(404).json({ success: false, message: 'Technician not found' });
+    }
+    
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    
+    // Update password
+    await User.updatePassword(id, hashedPassword);
+    
+    await db.query(
+      `INSERT INTO activity_logs (user_id, action, details) VALUES ($1, $2, $3)`,
+      [req.user.id, 'RESET_TECHNICIAN_PASSWORD', JSON.stringify({ technicianName: technician.name })]
+    );
+    
+    res.json({ success: true, message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getTechnicians,
   createTechnician,
   getTechnicianById,
   updateTechnician,
   deleteTechnician,
+  resetTechnicianPassword,
 };
