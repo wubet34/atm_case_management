@@ -1,0 +1,268 @@
+const Case = require('../models/Case');
+const User = require('../models/User');
+const db = require('../config/database');
+const { createNotification, emitNotification } = require('./notificationController');
+
+// Helper to get io instance
+const getIo = (req) => req.app.get('io');
+
+// @desc    Get all cases
+// @route   GET /api/cases
+// @access  Private
+const getCases = async (req, res) => {
+  try {
+    let technicianId = null;
+    if (req.user.role === 'technician') {
+      technicianId = req.user.id;
+    }
+    const cases = await Case.getAll(technicianId);
+    res.json({ success: true, data: cases });
+  } catch (error) {
+    console.error('Error getting cases:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get single case
+// @route   GET /api/cases/:id
+// @access  Private
+const getCaseById = async (req, res) => {
+  try {
+    const caseItem = await Case.findById(req.params.id);
+    if (!caseItem) {
+      return res.status(404).json({ success: false, message: 'Case not found' });
+    }
+    res.json({ success: true, data: caseItem });
+  } catch (error) {
+    console.error('Error getting case by id:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Create new case
+// @route   POST /api/cases
+// @access  Private/Admin
+const createCase = async (req, res) => {
+  try {
+    const caseData = {
+      ...req.body,
+      createdBy: req.user.id,
+    };
+    
+    const caseItem = await Case.create(caseData);
+    
+    // Notify all admins
+    const admins = await db.query(`SELECT id FROM users WHERE role = 'admin'`);
+    const io = getIo(req);
+    
+    for (const admin of admins.rows) {
+      const notification = await createNotification(
+        admin.id,
+        'case_created',
+        'New Case Created',
+        `New case ${caseItem.case_id} has been created at ${caseItem.atm_name}`,
+        caseItem.id
+      );
+      emitNotification(io, admin.id, notification);
+    }
+    
+    await db.query(
+      `INSERT INTO activity_logs (user_id, action, details) VALUES ($1, $2, $3)`,
+      [req.user.id, 'CREATE_CASE', JSON.stringify({ caseId: caseItem.case_id, atmName: caseItem.atm_name })]
+    );
+    
+    res.status(201).json({ success: true, data: caseItem });
+  } catch (error) {
+    console.error('Error creating case:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Update case
+// @route   PUT /api/cases/:id
+// @access  Private/Admin
+const updateCase = async (req, res) => {
+  try {
+    const updatedCase = await Case.update(req.params.id, req.body);
+    if (!updatedCase) {
+      return res.status(404).json({ success: false, message: 'Case not found' });
+    }
+    res.json({ success: true, data: updatedCase });
+  } catch (error) {
+    console.error('Error updating case:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete case
+// @route   DELETE /api/cases/:id
+// @access  Private/Admin
+const deleteCase = async (req, res) => {
+  try {
+    const caseItem = await Case.findById(req.params.id);
+    if (!caseItem) {
+      return res.status(404).json({ success: false, message: 'Case not found' });
+    }
+    await Case.delete(req.params.id);
+    res.json({ success: true, message: 'Case removed' });
+  } catch (error) {
+    console.error('Error deleting case:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Appoint technician to case
+// @route   PUT /api/cases/:id/appoint
+// @access  Private/Admin
+const appointTechnician = async (req, res) => {
+  try {
+    const { technicianId } = req.body;
+    const caseId = req.params.id;
+    
+    console.log('Appoint technician request:', { caseId, technicianId });
+    
+    if (!technicianId) {
+      return res.status(400).json({ success: false, message: 'Technician ID is required' });
+    }
+    
+    const caseItem = await Case.findById(caseId);
+    if (!caseItem) {
+      return res.status(404).json({ success: false, message: 'Case not found' });
+    }
+    
+    const technician = await User.findById(technicianId);
+    if (!technician) {
+      return res.status(404).json({ success: false, message: 'Technician not found' });
+    }
+    
+    console.log('Found case:', caseItem.case_id);
+    console.log('Found technician:', technician.name);
+    
+    const updatedCase = await Case.appointTechnician(caseId, technicianId, technician.name);
+    
+    // Create notification for technician
+    const notification = await createNotification(
+      technicianId,
+      'case_appointed',
+      'Case Assigned',
+      `You have been assigned to case ${updatedCase.case_id} at ${updatedCase.atm_name}`,
+      updatedCase.id
+    );
+    
+    // Emit real-time notification to technician
+    const io = getIo(req);
+    emitNotification(io, technicianId, notification);
+    
+    // Also notify admins
+    const admins = await db.query(`SELECT id FROM users WHERE role = 'admin'`);
+    for (const admin of admins.rows) {
+      const adminNotification = await createNotification(
+        admin.id,
+        'case_appointed',
+        'Technician Appointed',
+        `${technician.name} appointed to case ${updatedCase.case_id}`,
+        updatedCase.id
+      );
+      emitNotification(io, admin.id, adminNotification);
+    }
+    
+    await db.query(
+      `INSERT INTO activity_logs (user_id, action, details) VALUES ($1, $2, $3)`,
+      [req.user.id, 'APPOINT_TECHNICIAN', JSON.stringify({ 
+        caseId: updatedCase.case_id, 
+        technician: technician.name,
+        technicianId: technicianId
+      })]
+    );
+    
+    console.log('Technician appointed successfully');
+    res.json({ success: true, data: updatedCase });
+  } catch (error) {
+    console.error('Error appointing technician:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Start work on case
+// @route   PUT /api/cases/:id/start
+// @access  Private/Technician
+const startWork = async (req, res) => {
+  try {
+    const caseItem = await Case.findById(req.params.id);
+    if (!caseItem) {
+      return res.status(404).json({ success: false, message: 'Case not found' });
+    }
+    if (caseItem.technician_id !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+    const updatedCase = await Case.startWork(req.params.id);
+    res.json({ success: true, data: updatedCase });
+  } catch (error) {
+    console.error('Error starting work:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Complete work on case
+// @route   PUT /api/cases/:id/complete
+// @access  Private/Technician
+const completeWork = async (req, res) => {
+  try {
+    const caseItem = await Case.findById(req.params.id);
+    if (!caseItem) {
+      return res.status(404).json({ success: false, message: 'Case not found' });
+    }
+    if (caseItem.technician_id !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+    const updatedCase = await Case.completeWork(req.params.id);
+    
+    // Notify the admin who created the case
+    const notification = await createNotification(
+      caseItem.created_by,
+      'case_completed',
+      'Case Completed',
+      `Case ${updatedCase.case_id} has been completed by ${req.user.name}`,
+      updatedCase.id
+    );
+    
+    const io = getIo(req);
+    emitNotification(io, caseItem.created_by, notification);
+    
+    res.json({ success: true, data: updatedCase });
+  } catch (error) {
+    console.error('Error completing work:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Terminate case
+// @route   PUT /api/cases/:id/terminate
+// @access  Private/Admin
+const terminateCase = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const caseItem = await Case.findById(req.params.id);
+    if (!caseItem) {
+      return res.status(404).json({ success: false, message: 'Case not found' });
+    }
+    const updatedCase = await Case.terminateCase(req.params.id, reason);
+    res.json({ success: true, data: updatedCase });
+  } catch (error) {
+    console.error('Error terminating case:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Export all functions
+module.exports = {
+  getCases,
+  getCaseById,
+  createCase,
+  updateCase,
+  deleteCase,
+  appointTechnician,
+  startWork,
+  completeWork,
+  terminateCase,
+};
