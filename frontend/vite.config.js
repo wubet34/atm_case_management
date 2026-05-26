@@ -17,11 +17,20 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['lucide-react', 'react-hot-toast', 'recharts'],
-          'socket-vendor': ['socket.io-client'],
-        },
+        // ✅ FIXED: manualChunks as a FUNCTION instead of object
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('lucide-react') || id.includes('react-hot-toast') || id.includes('recharts')) {
+              return 'ui-vendor';
+            }
+            if (id.includes('socket.io-client')) {
+              return 'socket-vendor';
+            }
+          }
+        }
       },
     },
     chunkSizeWarningLimit: 1000,
@@ -30,11 +39,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://atm-case-management.onrender.com',
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:5000',
+        target: 'https://atm-case-management.onrender.com',
         changeOrigin: true,
         ws: true,
       },
@@ -44,7 +53,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: process.env.VITE_API_URL || 'http://localhost:5000',
+        target: process.env.VITE_API_URL || 'https://atm-case-management.onrender.com',
         changeOrigin: true,
       },
     },
