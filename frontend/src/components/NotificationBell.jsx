@@ -3,7 +3,31 @@ import { Bell, CheckCheck, Trash2, X, Clock, FileText, UserCheck, Wrench, AlertT
 import { useNotifications } from '../context/NotificationContext';
 import { useDarkMode } from '../context/DarkModeContext';
 import { useNavigate } from 'react-router-dom';
-import notificationSound from '../services/notificationSound';
+
+// Create simple notification sound
+const playNotificationSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 880;
+    gainNode.gain.value = 0.3;
+    
+    oscillator.start();
+    gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
+    oscillator.stop(audioContext.currentTime + 0.5);
+    
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+  } catch (error) {
+    console.error('Error playing sound:', error);
+  }
+};
 
 const NotificationBell = () => {
   const { darkMode } = useDarkMode();
@@ -21,21 +45,6 @@ const NotificationBell = () => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-  // Initialize sound on first click
-  useEffect(() => {
-    const initAudio = () => {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
-      }
-      document.removeEventListener('click', initAudio);
-    };
-    
-    document.addEventListener('click', initAudio);
-    
-    return () => document.removeEventListener('click', initAudio);
-  }, []);
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -47,7 +56,6 @@ const NotificationBell = () => {
   }, []);
 
   const handleOpen = async () => {
-    notificationSound.init();
     setIsOpen(true);
     await refreshNotifications();
   };
@@ -97,25 +105,8 @@ const NotificationBell = () => {
     await deleteNotification(id);
   };
 
-  // Test sound function
-  const testSound = () => {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    oscillator.frequency.value = 880;
-    gainNode.gain.value = 0.3;
-    oscillator.start();
-    gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
-    oscillator.stop(audioContext.currentTime + 0.5);
-    if (audioContext.state === 'suspended') {
-      audioContext.resume();
-    }
-  };
-
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative flex items-center gap-2" ref={dropdownRef}>
       <button
         onClick={handleOpen}
         className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -129,10 +120,10 @@ const NotificationBell = () => {
         )}
       </button>
 
-      {/* Test Sound Button - Place it next to the bell */}
+      {/* Test Sound Button */}
       <button
-        onClick={testSound}
-        className="ml-2 p-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+        onClick={playNotificationSound}
+        className="px-2 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
         title="Test Notification Sound"
       >
         🔔 Test Sound
