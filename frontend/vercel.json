@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://your-backend.onrender.com/api/$1"
+      "destination": "https://atm-case-management.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
@@ -12,11 +12,11 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "devCommand": "npm run dev",
-  "installCommand": "npm install",
+  "installCommand": "npm install --legacy-peer-deps",
   "framework": "vite",
   "env": {
-    "VITE_API_URL": "https://your-backend.onrender.com/api",
-    "VITE_SOCKET_URL": "https://your-backend.onrender.com"
+    "VITE_API_URL": "https://atm-case-management.onrender.com/api",
+    "VITE_SOCKET_URL": "https://atm-case-management.onrender.com"
   },
   "headers": [
     {
